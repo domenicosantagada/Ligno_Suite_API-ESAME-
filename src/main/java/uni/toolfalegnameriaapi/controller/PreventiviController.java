@@ -1,7 +1,9 @@
 package uni.toolfalegnameriaapi.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import uni.toolfalegnameriaapi.model.Preventivo;
 import uni.toolfalegnameriaapi.repository.PreventivoRepository;
 
@@ -10,26 +12,37 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/preventivi")
 @CrossOrigin(origins = "http://localhost:4200")
-// Fondamentale: permette ad Angular di chiamare queste API senza errori CORS
 public class PreventiviController {
 
     @Autowired
     private PreventivoRepository preventivoRepository;
 
-    // Metodo per RECUPERARE tutti i preventivi (GET)
     @GetMapping
     public List<Preventivo> getAllPreventivi() {
         return preventivoRepository.findAll();
     }
 
-    // Metodo per SALVARE o AGGIORNARE un preventivo (POST)
+    // 1. CREAZIONE NUOVO PREVENTIVO (POST)
     @PostMapping
-    public Preventivo savePreventivo(@RequestBody Preventivo invoice) {
-        // Il metodo save() fa sia la INSERT (se non esiste) che l'UPDATE (se esiste già)
+    public Preventivo createPreventivo(@RequestBody Preventivo invoice) {
+        // Blocca se si sta cercando di creare un preventivo con un ID già esistente
+        if (preventivoRepository.existsById(invoice.getInvoiceNumber())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Il numero preventivo esiste già.");
+        }
         return preventivoRepository.save(invoice);
     }
 
-    // Metodo per ELIMINARE un preventivo (DELETE)
+    // 2. AGGIORNAMENTO PREVENTIVO ESISTENTE (PUT)
+    @PutMapping("/{id}")
+    public Preventivo updatePreventivo(@PathVariable String id, @RequestBody Preventivo invoice) {
+        // Assicuriamoci che il preventivo da modificare esista davvero
+        if (!preventivoRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Impossibile aggiornare: preventivo non trovato.");
+        }
+        // Il save di Spring Data JPA esegue in automatico un UPDATE se l'ID esiste già
+        return preventivoRepository.save(invoice);
+    }
+
     @DeleteMapping("/{id}")
     public void deletePreventivo(@PathVariable String id) {
         preventivoRepository.deleteById(id);
