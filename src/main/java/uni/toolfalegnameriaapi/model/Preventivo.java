@@ -1,11 +1,15 @@
 package uni.toolfalegnameriaapi.model;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import lombok.Data;
 
 import java.util.List;
 
+@Entity // <-- QUESTO E' IL PEZZO CHE MANCA O NON E' RICONOSCIUTO
+@Data
 public class Preventivo {
     @Id
     private String invoiceNumber; // Collegato a invoiceNumber in Angular
