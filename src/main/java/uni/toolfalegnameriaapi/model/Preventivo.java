@@ -13,6 +13,7 @@ import java.util.List;
 public class Preventivo {
     @Id
     private String invoiceNumber; // Collegato a invoiceNumber in Angular
+    private Long utenteId;
     private String date;
     private String fromName;
     private String fromEmail;

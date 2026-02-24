@@ -18,8 +18,9 @@ public class PreventiviController {
     private PreventivoRepository preventivoRepository;
 
     @GetMapping
-    public List<Preventivo> getAllPreventivi() {
-        return preventivoRepository.findAll();
+    public List<Preventivo> getAllPreventivi(@RequestParam Long utenteId) {
+        // Ora usa il nuovo metodo del repository!
+        return preventivoRepository.findByUtenteId(utenteId);
     }
 
     // 1. CREAZIONE NUOVO PREVENTIVO (POST)
