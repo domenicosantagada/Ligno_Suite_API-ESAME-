@@ -1,4 +1,4 @@
-package uni.toolfalegnameriaapi.model;
+package uni.lignosuiteapi.model;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;

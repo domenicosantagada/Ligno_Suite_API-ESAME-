@@ -1,9 +1,9 @@
-package uni.toolfalegnameriaapi.controller;
+package uni.lignosuiteapi.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import uni.toolfalegnameriaapi.model.Cliente;
-import uni.toolfalegnameriaapi.repository.ClienteRepository;
+import uni.lignosuiteapi.model.Cliente;
+import uni.lignosuiteapi.repository.ClienteRepository;
 
 import java.util.List;
 

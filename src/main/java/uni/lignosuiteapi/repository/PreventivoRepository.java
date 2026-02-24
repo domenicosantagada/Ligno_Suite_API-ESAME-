@@ -1,8 +1,8 @@
-package uni.toolfalegnameriaapi.repository;
+package uni.lignosuiteapi.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import uni.toolfalegnameriaapi.model.Preventivo;
+import uni.lignosuiteapi.model.Preventivo;
 
 import java.util.List;
 

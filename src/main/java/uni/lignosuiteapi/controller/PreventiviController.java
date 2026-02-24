@@ -1,11 +1,11 @@
-package uni.toolfalegnameriaapi.controller;
+package uni.lignosuiteapi.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import uni.toolfalegnameriaapi.model.Preventivo;
-import uni.toolfalegnameriaapi.repository.PreventivoRepository;
+import uni.lignosuiteapi.model.Preventivo;
+import uni.lignosuiteapi.repository.PreventivoRepository;
 
 import java.util.List;
 
