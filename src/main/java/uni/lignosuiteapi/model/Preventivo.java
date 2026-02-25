@@ -12,7 +12,7 @@ import java.util.List;
 @Data
 public class Preventivo {
     @Id
-    private String invoiceNumber; // Collegato a invoiceNumber in Angular
+    private Long invoiceNumber; // Collegato a invoiceNumber in Angular
     private Long utenteId;
     private String date;
 

@@ -35,7 +35,7 @@ public class PreventiviController {
 
     // 2. AGGIORNAMENTO PREVENTIVO ESISTENTE (PUT)
     @PutMapping("/{id}")
-    public Preventivo updatePreventivo(@PathVariable String id, @RequestBody Preventivo invoice) {
+    public Preventivo updatePreventivo(@PathVariable Long id, @RequestBody Preventivo invoice) {
         // Assicuriamoci che il preventivo da modificare esista davvero
         if (!preventivoRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Impossibile aggiornare: preventivo non trovato.");
@@ -45,7 +45,13 @@ public class PreventiviController {
     }
 
     @DeleteMapping("/{id}")
-    public void deletePreventivo(@PathVariable String id) {
+    public void deletePreventivo(@PathVariable Long id) {
         preventivoRepository.deleteById(id);
+    }
+
+    @GetMapping("/next-number")
+    public Long getNextInvoiceNumber(@RequestParam Long utenteId) {
+        Long maxId = preventivoRepository.findMaxInvoiceNumberByUtenteId(utenteId);
+        return maxId + 1; // Se il max è 0, restituirà 1. Se il max è 5, restituirà 6.
     }
 }
