@@ -39,6 +39,15 @@ public class AuthController {
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente non trovato")
         );
 
+        // --- INIZIO NUOVO CONTROLLO SICUREZZA EMAIL ---
+        if (!utenteEsistente.getEmail().equals(datiAggiornati.getEmail())) {
+            // Se la nuova email esiste già nel DB, blocchiamo tutto!
+            if (utenteRepository.existsByEmail(datiAggiornati.getEmail())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Questa email è già in uso da un altro utente.");
+            }
+        }
+        
+
         // Aggiorna solo i campi del profilo aziendale (evitiamo di toccare la password qui per sicurezza)
         utenteEsistente.setNomeAzienda(datiAggiornati.getNomeAzienda());
         // Se l'utente cambia il nome azienda, aggiorniamo anche il nome generico usato nel login
