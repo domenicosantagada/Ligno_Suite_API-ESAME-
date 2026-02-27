@@ -31,5 +31,6 @@ public class Preventivo {
     private Double taxRate;
     private Double subtotal;
     private Double taxAmount;
+    private Double discount;
     private Double total;
 }
