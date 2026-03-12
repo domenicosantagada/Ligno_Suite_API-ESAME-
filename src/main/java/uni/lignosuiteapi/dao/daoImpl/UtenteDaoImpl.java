@@ -12,9 +12,21 @@ import uni.lignosuiteapi.model.Utente;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 
+/**
+ * Implementazione del DAO per la gestione degli utenti.
+ *
+ * @Repository Indica a Spring che questa classe gestisce
+ * l'accesso ai dati della tabella utente.
+ */
 @Repository
 public class UtenteDaoImpl implements UtenteDao {
 
+    /**
+     * RowMapper
+     * <p>
+     * Converte una riga del risultato SQL
+     * in un oggetto Java di tipo Utente.
+     */
     private final RowMapper<Utente> rowMapper = (rs, rowNum) -> {
         Utente u = new Utente();
         u.setId(rs.getLong("id"));
@@ -34,29 +46,56 @@ public class UtenteDaoImpl implements UtenteDao {
         u.setLogoBase64(rs.getString("logo_base64"));
         return u;
     };
+
+    /**
+     * JdbcTemplate
+     * utilizzato per eseguire le query SQL.
+     */
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    /**
+     * Recupera un utente tramite ID.
+     */
     @Override
     public Utente findById(Long id) {
         String sql = "SELECT * FROM utente WHERE id = ?";
-        return jdbcTemplate.query(sql, rowMapper, id).stream().findFirst().orElse(null);
+        return jdbcTemplate.query(sql, rowMapper, id)
+                .stream()
+                .findFirst()
+                .orElse(null);
     }
 
+    /**
+     * Recupera un utente tramite email.
+     * Utilizzato principalmente nel login.
+     */
     @Override
     public Utente findByEmail(String email) {
         String sql = "SELECT * FROM utente WHERE email = ?";
-        return jdbcTemplate.query(sql, rowMapper, email).stream().findFirst().orElse(null);
+        return jdbcTemplate.query(sql, rowMapper, email)
+                .stream()
+                .findFirst()
+                .orElse(null);
     }
 
+    /**
+     * Inserisce un nuovo utente nel database.
+     */
     @Override
     public Utente save(Utente utente) {
-        utente.formattaDati(); // Richiamo manuale della logica di business
+
+        // Applica eventuali formattazioni o regole di business
+        utente.formattaDati();
+
         String sql = "INSERT INTO utente (email, password, nome, nome_azienda, nome_titolare, cognome_titolare, telefono, partita_iva, codice_fiscale, indirizzo, citta, cap, provincia, logo_base64) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
+        // Serve per recuperare l'id generato automaticamente
         KeyHolder keyHolder = new GeneratedKeyHolder();
+
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+
             ps.setString(1, utente.getEmail());
             ps.setString(2, utente.getPassword());
             ps.setString(3, utente.getNome());
@@ -71,20 +110,45 @@ public class UtenteDaoImpl implements UtenteDao {
             ps.setString(12, utente.getCap());
             ps.setString(13, utente.getProvincia());
             ps.setString(14, utente.getLogoBase64());
+
             return ps;
         }, keyHolder);
 
+        // Recupero dell'id generato dal database
         if (keyHolder.getKeys() != null && keyHolder.getKeys().containsKey("id")) {
             utente.setId(((Number) keyHolder.getKeys().get("id")).longValue());
         }
+
         return utente;
     }
 
+    /**
+     * Aggiorna i dati di un utente esistente.
+     */
     @Override
     public Utente update(Utente utente) {
+
         utente.formattaDati();
+
         String sql = "UPDATE utente SET email=?, password=?, nome=?, nome_azienda=?, nome_titolare=?, cognome_titolare=?, telefono=?, partita_iva=?, codice_fiscale=?, indirizzo=?, citta=?, cap=?, provincia=?, logo_base64=? WHERE id=?";
-        jdbcTemplate.update(sql, utente.getEmail(), utente.getPassword(), utente.getNome(), utente.getNomeAzienda(), utente.getNomeTitolare(), utente.getCognomeTitolare(), utente.getTelefono(), utente.getPartitaIva(), utente.getCodiceFiscale(), utente.getIndirizzo(), utente.getCitta(), utente.getCap(), utente.getProvincia(), utente.getLogoBase64(), utente.getId());
+
+        jdbcTemplate.update(sql,
+                utente.getEmail(),
+                utente.getPassword(),
+                utente.getNome(),
+                utente.getNomeAzienda(),
+                utente.getNomeTitolare(),
+                utente.getCognomeTitolare(),
+                utente.getTelefono(),
+                utente.getPartitaIva(),
+                utente.getCodiceFiscale(),
+                utente.getIndirizzo(),
+                utente.getCitta(),
+                utente.getCap(),
+                utente.getProvincia(),
+                utente.getLogoBase64(),
+                utente.getId());
+
         return utente;
     }
 }
