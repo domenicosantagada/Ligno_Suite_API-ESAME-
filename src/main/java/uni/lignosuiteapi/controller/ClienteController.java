@@ -3,11 +3,10 @@ package uni.lignosuiteapi.controller;
 // Import delle classi necessarie per il controller REST
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-import uni.lignosuiteapi.dao.ClienteDao;
+import uni.lignosuiteapi.dao.daoImpl.ClienteDaoImpl;
 import uni.lignosuiteapi.model.Cliente;
+import uni.lignosuiteapi.service.ClienteService;
 
 import java.util.List;
 
@@ -35,13 +34,13 @@ import java.util.List;
 public class ClienteController {
 
     /**
-     * @Autowired Permette a Spring di iniettare automaticamente l'oggetto ClienteDao.
-     * <p>
-     * Il DAO (Data Access Object) è la classe che gestisce
-     * l'accesso al database per l'entità Cliente.
+     * @Autowired Permette a Spring di iniettare automaticamente l'oggetto ClienteService.
+     * ClienteService si occupa di gestire le operazioni CRUD sui clienti.
      */
     @Autowired
-    private ClienteDao clienteDao;
+    private ClienteService clienteService;
+    @Autowired
+    private ClienteDaoImpl clienteDaoImpl;
 
     /**
      * =========================
@@ -64,10 +63,9 @@ public class ClienteController {
     public List<Cliente> getAllClienti(@RequestParam Long utenteId) {
 
         /**
-         * Il DAO recupera dal database tutti i clienti
-         * associati all'utente specificato.
+         * Il Service chiama il DAO per recuperare i clienti dal database.
          */
-        return clienteDao.findAllByUtenteId(utenteId);
+        return clienteService.getAllClienti(utenteId);
     }
 
     /**
@@ -88,10 +86,9 @@ public class ClienteController {
     public Cliente createCliente(@RequestBody Cliente cliente) {
 
         /**
-         * Il DAO salva il nuovo cliente nel database.
-         * Il metodo save() restituisce l'oggetto salvato.
+         * Il Service chiama il DAO per salvare il nuovo cliente nel database.
          */
-        return clienteDao.save(cliente);
+        return clienteService.createCliente(cliente);
     }
 
     /**
@@ -119,47 +116,8 @@ public class ClienteController {
          * Converte il JSON ricevuto dal frontend in un oggetto Cliente.
          */
 
-        // Recupera il cliente esistente dal database
-        Cliente clienteEsistente = clienteDao.findById(id);
-
-        // Se il cliente non esiste
-        if (clienteEsistente == null) {
-
-            /**
-             * HttpStatus.NOT_FOUND (404)
-             * Indica che il cliente richiesto non è stato trovato.
-             */
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Impossibile aggiornare: cliente non trovato.");
-        }
-
-        /**
-         * Controllo di sicurezza:
-         *
-         * Verifica che il cliente appartenga allo stesso utente
-         * che sta tentando di modificarlo.
-         *
-         * Questo impedisce ad un utente di modificare
-         * i clienti di un altro utente.
-         */
-        if (!clienteEsistente.getUtenteId().equals(cliente.getUtenteId())) {
-
-            /**
-             * HttpStatus.FORBIDDEN (403)
-             * Indica che l'utente non ha i permessi per effettuare l'operazione.
-             */
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
-        }
-
-        /**
-         * Impostiamo manualmente l'id del cliente,
-         * per assicurarci che venga aggiornato il record corretto.
-         */
-        cliente.setId(id);
-
-        /**
-         * Il DAO aggiorna il cliente nel database.
-         */
-        return clienteDao.update(cliente);
+        // Il Service chiama il DAO per aggiornare il cliente nel database.
+        return clienteService.updateCliente(id, cliente);
     }
 
     /**
@@ -185,38 +143,7 @@ public class ClienteController {
          * Recupera l'id dell'utente dalla query dell'URL.
          */
 
-        // Recupera il cliente dal database
-        Cliente clienteEsistente = clienteDao.findById(id);
-
-        // Se il cliente non esiste
-        if (clienteEsistente == null) {
-
-            /**
-             * HttpStatus.NOT_FOUND (404)
-             * Il cliente richiesto non esiste.
-             */
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente non trovato.");
-        }
-
-        /**
-         * Controllo di sicurezza:
-         *
-         * Verifica che il cliente appartenga all'utente
-         * che sta tentando di eliminarlo.
-         */
-        if (!clienteEsistente.getUtenteId().equals(utenteId)) {
-
-            /**
-             * HttpStatus.FORBIDDEN (403)
-             * L'utente non ha il permesso di eliminare questo cliente.
-             */
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
-        }
-
-        /**
-         * Se tutti i controlli sono superati,
-         * il cliente viene eliminato dal database.
-         */
-        clienteDao.deleteById(id, utenteId);
+        // Il Service chiama il DAO per eliminare il cliente dal database.
+        clienteService.deleteCliente(id, utenteId);
     }
 }

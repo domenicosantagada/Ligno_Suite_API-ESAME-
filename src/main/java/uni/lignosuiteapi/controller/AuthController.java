@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import uni.lignosuiteapi.dao.UtenteDao;
 import uni.lignosuiteapi.model.Utente;
+import uni.lignosuiteapi.service.UtenteService;
 
 /**
  * Controller per la gestione dell'autenticazione (Login, Registrazione) e del profilo utente.
@@ -34,6 +35,8 @@ public class AuthController {
      */
     @Autowired
     private UtenteDao utenteDao;
+    @Autowired
+    private UtenteService utenteService;
 
     /**
      * =========================
@@ -52,25 +55,9 @@ public class AuthController {
     @PostMapping("/register")
     public Utente register(@RequestBody Utente utente) {
 
-        // Controlla se nel database esiste già un utente con la stessa email
-        if (utenteDao.findByEmail(utente.getEmail()) != null) {
-
-            /**
-             * Se l'email esiste già, viene lanciata un'eccezione HTTP.
-             *
-             * HttpStatus.CONFLICT (409)
-             * Indica che c'è un conflitto con lo stato attuale della risorsa.
-             *
-             * Il messaggio verrà inviato al frontend.
-             */
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email già registrata.");
-        }
-
-        /**
-         * Se l'email non esiste, il nuovo utente viene salvato nel database.
-         * Il metodo save() del DAO inserisce il record e restituisce l'utente salvato.
-         */
-        return utenteDao.save(utente);
+        // Il metodo registerUser() del Service si occupa di tutta la logica di registrazione,
+        // e di chiamare il DAO per salvare l'utente nel database.
+        return utenteService.registerUser(utente);
     }
 
     /**
@@ -86,35 +73,9 @@ public class AuthController {
      * Il frontend invia email e password nel corpo della richiesta.
      */
     @PostMapping("/login")
-    public Utente login(@RequestBody Utente credenziali) {
+    public Utente login(@RequestBody Utente utente) {
 
-        /**
-         * Cerca nel database un utente con l'email fornita.
-         */
-        Utente utente = utenteDao.findByEmail(credenziali.getEmail());
-
-        /**
-         * Verifica due condizioni:
-         *
-         * 1) L'utente non esiste
-         * 2) La password inserita non corrisponde a quella salvata
-         *
-         * Se una delle due è vera, il login fallisce.
-         */
-        if (utente == null || !utente.getPassword().equals(credenziali.getPassword())) {
-
-            /**
-             * HttpStatus.UNAUTHORIZED (401)
-             * Indica che le credenziali fornite non sono valide.
-             */
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email o password errati.");
-        }
-
-        /**
-         * Se email e password sono corrette,
-         * restituiamo l'utente al frontend.
-         */
-        return utente;
+        return utenteService.loginUser(utente);
     }
 
     /**
