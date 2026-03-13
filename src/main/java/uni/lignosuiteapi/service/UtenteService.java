@@ -62,4 +62,68 @@ public class UtenteService {
 
         return utente;
     }
+
+    // Metodo per aggiornare profilo utente
+    public Utente updateUser(Long id, Utente datiAggiornati) {
+
+        Utente utenteEsistente = utenteDao.findById(id);
+
+        // Se l'utente non esiste nel database
+        if (utenteEsistente == null) {
+
+            /**
+             * HttpStatus.NOT_FOUND (404)
+             * Indica che la risorsa richiesta non è stata trovata.
+             */
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente non trovato");
+        }
+
+        /**
+         * Controllo sull'email:
+         *
+         * Se l'utente sta modificando la propria email,
+         * bisogna verificare che non sia già utilizzata da un altro utente.
+         */
+        if (!utenteEsistente.getEmail().equals(datiAggiornati.getEmail())) {
+
+            // Se l'email è già presente nel database
+            if (utenteDao.findByEmail(datiAggiornati.getEmail()) != null) {
+
+                /**
+                 * HttpStatus.CONFLICT (409)
+                 * Segnala che l'email è già utilizzata da un altro utente.
+                 */
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Questa email è già in uso da un altro utente.");
+            }
+        }
+
+        /**
+         * Aggiornamento dei campi dell'utente.
+         *
+         * I nuovi valori ricevuti dal frontend sostituiscono quelli esistenti.
+         */
+
+        utenteEsistente.setNomeAzienda(datiAggiornati.getNomeAzienda());
+        utenteEsistente.setNome(datiAggiornati.getNomeAzienda());
+        utenteEsistente.setNomeTitolare(datiAggiornati.getNomeTitolare());
+        utenteEsistente.setCognomeTitolare(datiAggiornati.getCognomeTitolare());
+        utenteEsistente.setTelefono(datiAggiornati.getTelefono());
+        utenteEsistente.setPartitaIva(datiAggiornati.getPartitaIva());
+        utenteEsistente.setCodiceFiscale(datiAggiornati.getCodiceFiscale());
+        utenteEsistente.setIndirizzo(datiAggiornati.getIndirizzo());
+        utenteEsistente.setCitta(datiAggiornati.getCitta());
+        utenteEsistente.setCap(datiAggiornati.getCap());
+        utenteEsistente.setProvincia(datiAggiornati.getProvincia());
+        utenteEsistente.setLogoBase64(datiAggiornati.getLogoBase64());
+        utenteEsistente.setEmail(datiAggiornati.getEmail());
+
+        /**
+         * Salvataggio delle modifiche nel database.
+         *
+         * Il metodo update() del DAO aggiorna il record esistente.
+         *
+         * L'utente aggiornato viene restituito al frontend.
+         */
+        return utenteDao.update(utenteEsistente);
+    }
 }
