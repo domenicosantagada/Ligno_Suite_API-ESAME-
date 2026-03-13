@@ -21,7 +21,9 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String emailDiSistema;
 
-    public void inviaPreventivoConAllegato(String destinatario, String oggetto, String testo, MultipartFile allegatoPdf, String nomeArtigiano, String emailArtigiano) throws MessagingException, UnsupportedEncodingException {
+
+    public void inviaPreventivoConAllegato(String destinatario, String oggetto, String testo, MultipartFile allegatoPdf, String nomeArtigiano, String emailArtigiano)
+            throws MessagingException, UnsupportedEncodingException {
         MimeMessage messaggio = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(messaggio, true);
 
