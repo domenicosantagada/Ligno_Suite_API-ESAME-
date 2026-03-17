@@ -38,3 +38,6 @@ out/
 
 # Ignora i file con chiavi e segreti
 src/main/resources/application-secret.properties
+
+# Ignora i file .env che possono contenere variabili d'ambiente sensibili
+.env
