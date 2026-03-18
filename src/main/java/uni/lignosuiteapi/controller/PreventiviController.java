@@ -143,4 +143,16 @@ public class PreventiviController {
          */
         return preventivoService.getNextInvoiceNumber(utenteId);
     }
+
+    /**
+     * =========================
+     * OTTENERE PREVENTIVI PER IL CLIENTE
+     * =========================
+     * Endpoint per recuperare tutti i preventivi destinati a una specifica email.
+     * Esempio: GET /api/preventivi/cliente?email=mario@email.it
+     */
+    @GetMapping("/cliente")
+    public List<Preventivo> getPreventiviPerCliente(@RequestParam String email) {
+        return preventivoService.getPreventiviPerCliente(email);
+    }
 }

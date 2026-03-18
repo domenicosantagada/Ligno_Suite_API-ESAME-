@@ -209,4 +209,14 @@ public class PreventivoDaoImpl implements PreventivoDao {
 
         return (max != null) ? max + 1 : 1L;
     }
+
+    /**
+     * Recupera tutti i preventivi associati ad una specifica email del cliente.
+     */
+    @Override
+    public List<Preventivo> findAllByToEmail(String email) {
+        // Cerca i preventivi dove la colonna to_email corrisponde all'email del cliente
+        String sql = "SELECT * FROM preventivo WHERE to_email = ?";
+        return jdbcTemplate.query(sql, rowMapper, email);
+    }
 }

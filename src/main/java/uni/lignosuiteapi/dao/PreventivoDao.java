@@ -16,4 +16,6 @@ public interface PreventivoDao {
     void deleteById(Long id, Long utenteId);
 
     Long getNextInvoiceNumber(Long utenteId);
+
+    List<Preventivo> findAllByToEmail(String toEmail);
 }

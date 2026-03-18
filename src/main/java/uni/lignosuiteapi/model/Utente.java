@@ -22,6 +22,9 @@ public class Utente {
     // Identificativo univoco dell'utente (chiave primaria nel database)
     private Long id;
 
+    // Ruolo di utente (admin, falegname, cliente)
+    private String ruolo;
+
     // Credenziali di accesso
     private String email;
     private String password;
@@ -59,6 +62,13 @@ public class Utente {
      * (es. rimuovere spazi, sistemare maiuscole/minuscole).
      */
     public void formattaDati() {
+
+        // Imposta il ruolo di default se non specificato (per sicurezza)
+        if (this.ruolo == null || this.ruolo.trim().isEmpty()) {
+            this.ruolo = "FALEGNAME";
+        } else {
+            this.ruolo = this.ruolo.trim().toUpperCase();
+        }
 
         // Email in minuscolo senza spazi
         if (this.email != null)

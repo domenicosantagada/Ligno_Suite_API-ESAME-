@@ -31,6 +31,7 @@ public class UtenteDaoImpl implements UtenteDao {
     private final RowMapper<Utente> rowMapper = (rs, rowNum) -> {
         Utente u = new Utente();
         u.setId(rs.getLong("id"));
+        u.setRuolo(rs.getString("ruolo"));
         u.setEmail(rs.getString("email"));
         u.setPassword(rs.getString("password"));
         u.setNome(rs.getString("nome"));
@@ -96,7 +97,7 @@ public class UtenteDaoImpl implements UtenteDao {
         // Applica eventuali formattazioni o regole di business
         utente.formattaDati();
 
-        String sql = "INSERT INTO utente (email, password, nome, nome_azienda, nome_titolare, cognome_titolare, telefono, partita_iva, codice_fiscale, indirizzo, citta, cap, provincia, logo_base64) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO utente (ruolo, email, password, nome, nome_azienda, nome_titolare, cognome_titolare, telefono, partita_iva, codice_fiscale, indirizzo, citta, cap, provincia, logo_base64) VALUES (?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         // Serve per recuperare l'id generato automaticamente
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -104,20 +105,21 @@ public class UtenteDaoImpl implements UtenteDao {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
-            ps.setString(1, utente.getEmail());
-            ps.setString(2, utente.getPassword());
-            ps.setString(3, utente.getNome());
-            ps.setString(4, utente.getNomeAzienda());
-            ps.setString(5, utente.getNomeTitolare());
-            ps.setString(6, utente.getCognomeTitolare());
-            ps.setString(7, utente.getTelefono());
-            ps.setString(8, utente.getPartitaIva());
-            ps.setString(9, utente.getCodiceFiscale());
-            ps.setString(10, utente.getIndirizzo());
-            ps.setString(11, utente.getCitta());
-            ps.setString(12, utente.getCap());
-            ps.setString(13, utente.getProvincia());
-            ps.setString(14, utente.getLogoBase64());
+            ps.setString(1, utente.getRuolo());
+            ps.setString(2, utente.getEmail());
+            ps.setString(3, utente.getPassword());
+            ps.setString(4, utente.getNome());
+            ps.setString(5, utente.getNomeAzienda());
+            ps.setString(6, utente.getNomeTitolare());
+            ps.setString(7, utente.getCognomeTitolare());
+            ps.setString(8, utente.getTelefono());
+            ps.setString(9, utente.getPartitaIva());
+            ps.setString(10, utente.getCodiceFiscale());
+            ps.setString(11, utente.getIndirizzo());
+            ps.setString(12, utente.getCitta());
+            ps.setString(13, utente.getCap());
+            ps.setString(14, utente.getProvincia());
+            ps.setString(15, utente.getLogoBase64());
 
             return ps;
         }, keyHolder);
@@ -138,9 +140,10 @@ public class UtenteDaoImpl implements UtenteDao {
 
         utente.formattaDati();
 
-        String sql = "UPDATE utente SET email=?, password=?, nome=?, nome_azienda=?, nome_titolare=?, cognome_titolare=?, telefono=?, partita_iva=?, codice_fiscale=?, indirizzo=?, citta=?, cap=?, provincia=?, logo_base64=? WHERE id=?";
+        String sql = "UPDATE utente SET ruolo=?, email=?, password=?, nome=?, nome_azienda=?, nome_titolare=?, cognome_titolare=?, telefono=?, partita_iva=?, codice_fiscale=?, indirizzo=?, citta=?, cap=?, provincia=?, logo_base64=? WHERE id=?";
 
         jdbcTemplate.update(sql,
+                utente.getRuolo(),
                 utente.getEmail(),
                 utente.getPassword(),
                 utente.getNome(),

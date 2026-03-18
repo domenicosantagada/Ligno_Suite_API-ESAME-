@@ -122,4 +122,15 @@ public class AuthController {
 
         return utenteService.updateUser(id, datiAggiornati);
     }
+
+    /**
+     * =========================
+     * RECUPERO SINGOLO UTENTE
+     * =========================
+     * Endpoint per recuperare i dati di un utente (es. il falegname) tramite il suo ID.
+     */
+    @GetMapping("/{id}")
+    public Utente getUtenteById(@PathVariable Long id) {
+        return utenteService.getUtenteById(id);
+    }
 }

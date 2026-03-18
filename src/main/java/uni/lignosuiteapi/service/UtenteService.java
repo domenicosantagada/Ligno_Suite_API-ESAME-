@@ -133,4 +133,9 @@ public class UtenteService {
     public List<Utente> getAllUtenti() {
         return utenteDao.findAll();
     }
+
+    // Metodo per recuperare un singolo utente dal suo ID
+    public Utente getUtenteById(Long id) {
+        return utenteDao.findById(id);
+    }
 }

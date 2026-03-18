@@ -170,4 +170,13 @@ public class PreventivoService {
          */
         return preventivoDao.getNextInvoiceNumber(utenteId);
     }
+
+    // Metodo per recuperare tutti i preventivi associati a un cliente specifico
+    public List<Preventivo> getPreventiviPerCliente(String email) {
+
+        /**
+         * Il DAO recupera tutti i preventivi associati alla specifica email del cliente.
+         */
+        return preventivoDao.findAllByToEmail(email);
+    }
 }
