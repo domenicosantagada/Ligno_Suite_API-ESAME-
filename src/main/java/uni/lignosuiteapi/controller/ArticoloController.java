@@ -92,4 +92,12 @@ public class ArticoloController {
          */
         articoloService.deleteArticolo(id);
     }
+
+    /**
+     * Metodo Get per recuperare tutti gli articoli.
+     */
+    @GetMapping("/all")
+    public List<Articolo> getAllArticoli() {
+        return articoloService.getAllArticoli();
+    }
 }

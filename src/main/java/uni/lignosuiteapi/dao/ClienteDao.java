@@ -5,6 +5,9 @@ import uni.lignosuiteapi.model.Cliente;
 import java.util.List;
 
 public interface ClienteDao {
+
+    List<Cliente> findAll();
+
     List<Cliente> findAllByUtenteId(Long utenteId);
 
     Cliente findById(Long id);

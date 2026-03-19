@@ -49,6 +49,15 @@ public class ClienteDaoImpl implements ClienteDao {
     private JdbcTemplate jdbcTemplate;
 
     /**
+     * Recupera tutti i clienti presenti nel database.
+     */
+    @Override
+    public List<Cliente> findAll() {
+        String sql = "SELECT * FROM cliente";
+        return jdbcTemplate.query(sql, rowMapper);
+    }
+
+    /**
      * Recupera tutti i clienti appartenenti ad un utente.
      */
     @Override

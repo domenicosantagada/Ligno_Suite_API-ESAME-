@@ -19,6 +19,10 @@ public class ClienteService {
     @Autowired
     private ClienteDao clienteDao;
 
+    public List<Cliente> getAllClientiDb() {
+        return clienteDao.findAll();
+    }
+
     public List<Cliente> getAllClienti(Long utenteId) {
         return clienteDao.findAllByUtenteId(utenteId);
     }

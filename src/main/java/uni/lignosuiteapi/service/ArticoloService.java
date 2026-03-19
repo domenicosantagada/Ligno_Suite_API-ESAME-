@@ -17,7 +17,13 @@ public class ArticoloService {
 
     // Metodo per ottenere tutti gli articoli di un utente.
     public List<Articolo> getArticoliByUtenteId(Long utenteId) {
+
         return articoloDao.findByUtenteId(utenteId);
+    }
+
+    // Metodo per ottenere tutti gli articoli.
+    public List<Articolo> getAllArticoli() {
+        return articoloDao.findAll();
     }
 
     // Metodo per creare un nuovo articolo.

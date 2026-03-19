@@ -39,6 +39,12 @@ public class ArticoloDaoImpl implements ArticoloDao {
     private JdbcTemplate jdbcTemplate;
 
     @Override
+    public List<Articolo> findAll() {
+        String sql = "SELECT * FROM articolo";
+        return jdbcTemplate.query(sql, rowMapper);
+    }
+
+    @Override
     public List<Articolo> findByUtenteId(Long utenteId) {
         String sql = "SELECT * FROM articolo WHERE utente_id = ?";
         return jdbcTemplate.query(sql, rowMapper, utenteId);

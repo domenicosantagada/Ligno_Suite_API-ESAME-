@@ -5,6 +5,9 @@ import uni.lignosuiteapi.model.Articolo;
 import java.util.List;
 
 public interface ArticoloDao {
+
+    List<Articolo> findAll();
+
     List<Articolo> findByUtenteId(Long utenteId);
 
     Articolo findById(Long id);

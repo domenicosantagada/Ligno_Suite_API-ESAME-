@@ -42,7 +42,7 @@ public class ClienteController {
 
     /**
      * =========================
-     * OTTENERE TUTTI I CLIENTI
+     * OTTENERE TUTTI I CLIENTI DI UN UTENTE
      * =========================
      * <p>
      * Endpoint per recuperare tutti i clienti appartenenti
@@ -143,5 +143,15 @@ public class ClienteController {
 
         // Il Service chiama il DAO per eliminare il cliente dal database.
         clienteService.deleteCliente(id, utenteId);
+    }
+
+    /**
+     * ===============================
+     * OTTENERE TUTTI I CLIENTI DEL DATABASE
+     * ===============================
+     */
+    @GetMapping("/all")
+    private List<Cliente> getAllClienti() {
+        return clienteService.getAllClientiDb();
     }
 }
