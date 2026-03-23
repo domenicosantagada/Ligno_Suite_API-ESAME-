@@ -1,0 +1,768 @@
+{
+  "info": {
+    "_postman_id": "94997c16-aeb8-4d7f-b609-50f440fe1df4",
+    "name": "LignoSuite",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "52763695",
+    "_collection_link": "https://go.postman.co/collection/52763695-94997c16-aeb8-4d7f-b609-50f440fe1df4?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Articolo",
+      "item": [
+        {
+          "name": "getArticoliByUtenteId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/articoli/utente/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "articoli",
+                "utente",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "createArticolo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"viti 4x50 (1000 pz)\",\n    \"prezzoAcquisto\": 9.9,\n    \"fornitore\": \"datacol\",\n    \"dataAcquisto\": \"2026-03-19\",\n    \"unitaMisura\": \"conf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/articoli/utente/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "articoli",
+                "utente",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "updateArticolo",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"viti 5x40 (1000 pz)\",\n    \"prezzoAcquisto\": 9.9,\n    \"fornitore\": \"datacol\",\n    \"dataAcquisto\": \"2026-03-19\",\n    \"unitaMisura\": \"conf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/articoli/2",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "articoli",
+                "2"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "deleteArticoloById",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"maniglia\",\n  \"prezzoAcquisto\": 3.50,\n  \"fornitore\": \"ferramenta rossi\",\n  \"unitaMisura\": \"pz\",\n  \"dataAcquisto\": \"2024-03-14\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/articoli/10",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "articoli",
+                "10"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getAllArticoli",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"viti 5x40 (1000 pz)\",\n    \"prezzoAcquisto\": 9.9,\n    \"fornitore\": \"datacol\",\n    \"dataAcquisto\": \"2026-03-19\",\n    \"unitaMisura\": \"conf\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/articoli/all",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "articoli",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Utente",
+      "item": [
+        {
+          "name": "getAllUtenti",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"maniglia\",\n  \"prezzoAcquisto\": 3.50,\n  \"fornitore\": \"ferramenta rossi\",\n  \"unitaMisura\": \"pz\",\n  \"dataAcquisto\": \"2024-03-14\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/all",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "auth",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "registerFalegname",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"style house\",\n    \"email\": \"s@h\",\n    \"password\": \"111111\",\n    \"ruolo\": \"FALEGNAME\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "registerCliente",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Maria Carmela\",\n    \"email\": \"m@m\",\n    \"password\": \"111111\",\n    \"ruolo\": \"CLIENTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "loginUtente",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"d@d\",\n    \"password\": \"111111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getUtente",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"cap\": \"\",\n    \"citta\": \"\",\n    \"codiceFiscale\": \"\",\n    \"cognomeTitolare\": \"santagada\",\n    \"email\": \"d@d\",\n    \"id\": 1,\n    \"indirizzo\": \"\",\n    \"logoBase64\": null,\n    \"nome\": \"Falegnameria Santagada\",\n    \"nomeAzienda\": \"Falegnameria Santagada\",\n    \"nomeTitolare\": \"Dionisio\",\n    \"partitaIva\": \"\",\n    \"password\": \"111111\",\n    \"provincia\": \"\",\n    \"ruolo\": \"FALEGNAME\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/update/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "auth",
+                "update",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getUtenteById",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \n    \"cognomeTitolare\": \"santa\",\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/auth/4",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "auth",
+                "4"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cliente",
+      "item": [
+        {
+          "name": "getAllClientiByIdUtente",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"viti 5x40 (1000 pz)\",\n    \"prezzoAcquisto\": 9.9,\n    \"fornitore\": \"datacol\",\n    \"dataAcquisto\": \"2026-03-19\",\n    \"unitaMisura\": \"conf\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/clienti?utenteId=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clienti"
+              ],
+              "query": [
+                {
+                  "key": "utenteId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "createCliente",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"pietro laino\",\n    \"email\": \"laino@pietro\",\n    \"telefono\": \"\",\n    \"partitaIva\": \"\",\n    \"utenteId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/clienti",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clienti"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "deleteClienteById",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/clienti/3?utenteId=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clienti",
+                "3"
+              ],
+              "query": [
+                {
+                  "key": "utenteId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "updateClienteById",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"pietro laino\",\n    \"email\": \"laino@pietro\",\n    \"telefono\": \"333567897\",\n    \"partitaIva\": \"prt4839fjswkv\",\n    \"utenteId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/clienti/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clienti",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getAllClienti",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/clienti/all",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "clienti",
+                "all"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Preventivi",
+      "item": [
+        {
+          "name": "createPreventivo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"invoiceNumber\": 2,\n    \"date\": \"2026-03-19\",\n    \"fromName\": \"Falegnameria Santagada\",\n    \"fromEmail\": \"d@d\",\n    \"fromPiva\": \"\",\n    \"toName\": \"Domenico Santagada\",\n    \"toEmail\": \"domenico.santgada@libero.it\",\n    \"toPiva\": \"\",\n    \"items\": [\n        {\n            \"id\": \"1773930581234\",\n            \"description\": \"Restauro conservativo degli infissi esistenti, mirato al ripristino dell'integrità strutturale ed estetica. Il processo prevede la rimozione accurata delle finiture deteriorate, la riparazione delle sezioni lignee danneggiate, la levigatura di precisione e l'applicazione di un ciclo di finitura protettivo ad alta durabilità.\",\n            \"unitaMisura\": \"pz\",\n            \"quantity\": 4,\n            \"rate\": 200,\n            \"amount\": 800\n        },\n        {\n            \"id\": \"1773930585678\",\n            \"description\": \"Realizzazione su misura di mobili in legno massello con finitura naturale, comprendente progettazione, taglio, assemblaggio e levigatura finale.\",\n            \"unitaMisura\": \"pz\",\n            \"quantity\": 3,\n            \"rate\": 350,\n            \"amount\": 1050\n        },\n        {\n            \"id\": \"1773930590123\",\n            \"description\": \"Riparazione e sostituzione di componenti meccaniche degli infissi, compresa la sostituzione di cerniere e maniglie con materiali di alta qualità.\",\n            \"unitaMisura\": \"pz\",\n            \"quantity\": 5,\n            \"rate\": 80,\n            \"amount\": 400\n        }\n    ],\n    \"taxRate\": 22,\n    \"subtotal\": 2250,\n    \"taxAmount\": 495,\n    \"discount\": 0,\n    \"total\": 2745,\n    \"utenteId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/preventivi",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "preventivi"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getAllPreventiviByUtenteId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/preventivi?utenteId=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "preventivi"
+              ],
+              "query": [
+                {
+                  "key": "utenteId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "updatePreventivoById",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"date\": \"2026-03-19\",\n    \"discount\": 0,\n    \"fromEmail\": \"d@d\",\n    \"fromName\": \"Falegnameria Santagada\",\n    \"fromPiva\": \"\",\n    \"id\": 1,\n    \"invoiceNumber\": 1,\n    \"items\": [\n        {\n            \"amount\": 1200,\n            \"description\": \"Restauro conservativo degli infissi esistenti, mirato al ripristino dell'integrità strutturale ed estetica. Il processo prevede la rimozione accurata delle finiture deteriorate, la riparazione delle sezioni lignee danneggiate, la levigatura di precisione e l'applicazione di un ciclo di finitura protettivo ad alta durabilità.\",\n            \"id\": \"1773930485211\",\n            \"quantity\": 6,\n            \"rate\": 200,\n            \"unitaMisura\": \"pz\"\n        },\n        {\n            \"id\": \"1773931974524\",\n            \"description\": \"Trasporto.\",\n            \"quantity\": 1,\n            \"unitaMisura\": \"corpo\",\n            \"rate\": 400,\n            \"amount\": 400\n        }\n    ],\n    \"subtotal\": 1600,\n    \"taxAmount\": 352,\n    \"taxRate\": 22,\n    \"toEmail\": \"domenico.santgada@libero.it\",\n    \"toName\": \"Domenico Santagada\",\n    \"toPiva\": \"\",\n    \"total\": 1952,\n    \"utenteId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/preventivi/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "preventivi",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getNextNumberPreventivo",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"date\": \"2026-03-19\",\n    \"discount\": 0,\n    \"fromEmail\": \"d@d\",\n    \"fromName\": \"Falegnameria Santagada\",\n    \"fromPiva\": \"\",\n    \"id\": 1,\n    \"invoiceNumber\": 1,\n    \"items\": [\n        {\n            \"amount\": 1200,\n            \"description\": \"Restauro conservativo degli infissi esistenti, mirato al ripristino dell'integrità strutturale ed estetica. Il processo prevede la rimozione accurata delle finiture deteriorate, la riparazione delle sezioni lignee danneggiate, la levigatura di precisione e l'applicazione di un ciclo di finitura protettivo ad alta durabilità.\",\n            \"id\": \"1773930485211\",\n            \"quantity\": 6,\n            \"rate\": 200,\n            \"unitaMisura\": \"pz\"\n        },\n        {\n            \"id\": \"1773931974524\",\n            \"description\": \"Trasporto.\",\n            \"quantity\": 1,\n            \"unitaMisura\": \"corpo\",\n            \"rate\": 400,\n            \"amount\": 400\n        }\n    ],\n    \"subtotal\": 1600,\n    \"taxAmount\": 352,\n    \"taxRate\": 22,\n    \"toEmail\": \"domenico.santgada@libero.it\",\n    \"toName\": \"Domenico Santagada\",\n    \"toPiva\": \"\",\n    \"total\": 1952,\n    \"utenteId\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/preventivi/next-number?utenteId=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "preventivi",
+                "next-number"
+              ],
+              "query": [
+                {
+                  "key": "utenteId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "getAllPreventiviByEmailCliente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/preventivi/cliente?email=domenico.santgada@libero.it",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "preventivi",
+                "cliente"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "domenico.santgada@libero.it"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "deletePreventivo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/preventivi/1?utenteId=1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "preventivi",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "utenteId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Ai",
+      "item": [
+        {
+          "name": "generaDescrizione",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"testo\":\"lavoro di restauro porte\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/ai/genera-descrizione",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "ai",
+                "genera-descrizione"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Email",
+      "item": [
+        {
+          "name": "invioMail",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "uuid": "47edd7c8-dbcc-4551-a675-53737cafdaee",
+                  "src": "postman-cloud:///1f123adc-8087-4d70-b0f8-ecd804e34be1"
+                },
+                {
+                  "key": "destinatario",
+                  "value": "domenico.santgada@libero.it",
+                  "type": "text",
+                  "uuid": "236b9017-75cb-48a9-b51f-d4a9ff95051a"
+                },
+                {
+                  "key": "oggetto",
+                  "value": "Prova postman",
+                  "type": "text",
+                  "uuid": "f8d1343b-f879-430c-a25c-7dabda46a1c4"
+                },
+                {
+                  "key": "testo",
+                  "value": "questa mail è stata inviata da postman",
+                  "type": "text",
+                  "uuid": "1f56a895-542f-42cf-8109-eda76568e0f5"
+                },
+                {
+                  "key": "nomeMittente",
+                  "value": "Falegnameria Postman",
+                  "type": "text",
+                  "uuid": "ec2e9b6f-4b42-4884-8425-d06dce668fe1"
+                },
+                {
+                  "key": "emailMittente",
+                  "value": "d@d",
+                  "type": "text",
+                  "uuid": "62c9f623-776e-42ee-a478-182854edb331"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/email/invia-preventivo",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "email",
+                "invia-preventivo"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
