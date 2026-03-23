@@ -56,6 +56,13 @@ Per questioni di sicurezza, le chiavi API e le password non sono tracciate su Gi
 
 ---
 
+### 3. Test delle API tramite Postman
+
+Per facilitare il test degli endpoint REST, all'interno della cartella `postman` del progetto è stata inclusa la
+Collection ufficiale.
+È sufficiente aprire Postman, cliccare su "Import" e caricare il file `LignoSuite_API.postman_collection.json` per avere
+a disposizione tutte le chiamate pre-configurate verso il backend locale.
+
 ## Avvio dell'Applicazione
 
 1. Clonare il repository o estrarre la cartella.
