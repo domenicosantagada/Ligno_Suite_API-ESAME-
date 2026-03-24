@@ -2,8 +2,6 @@
 -- PostgreSQL database dump
 --
 
-\restrict Yb8OXadImbHZVJCkzoqad4tbfemDydlD3pFnYRUrOviIPxi8TnLSqrxzDRBn0cW
-
 -- Dumped from database version 18.3 (Homebrew)
 -- Dumped by pg_dump version 18.3 (Homebrew)
 
@@ -448,6 +446,3 @@ ALTER TABLE ONLY public.preventivo
 --
 -- PostgreSQL database dump complete
 --
-
-\unrestrict Yb8OXadImbHZVJCkzoqad4tbfemDydlD3pFnYRUrOviIPxi8TnLSqrxzDRBn0cW
-
