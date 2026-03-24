@@ -1,38 +1,27 @@
 # ==========================================
-# Fase 1: Build dell'applicazione Angular
+# Fase 1: Build dell'applicazione
 # ==========================================
-FROM node:20-alpine AS builder
+FROM gradle:8.5-jdk21 AS builder
 WORKDIR /app
 
-# Copia package.json e installa le dipendenze
-COPY package*.json ./
-RUN npm install
+# Copia i file necessari per la build
+COPY build.gradle settings.gradle ./
+COPY gradle ./gradle
+COPY gradlew ./
+COPY src ./src
 
-# Copia tutto il resto e compila per la produzione
-COPY . .
-RUN npm run build --configuration=production
+# Esegue la build saltando i test per velocizzare il processo
+RUN ./gradlew build -x test
 
 # ==========================================
-# Fase 2: Server Nginx per servire l'app
+# Fase 2: Esecuzione
 # ==========================================
-FROM nginx:alpine
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
 
-# Rimuove la pagina di default di nginx
-RUN rm -rf /usr/share/nginx/html/*
+# Copia solo il file .jar generato dalla fase precedente
+COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Copia la build di Angular (assicurati che il percorso corrisponda al nome in package.json)
-COPY --from=builder /app/dist/tool-falegnameria/browser /usr/share/nginx/html
+EXPOSE 8080
 
-# Aggiunge una configurazione per gestire il routing della Single Page Application
-RUN echo 'server { \
-    listen 80; \
-    location / { \
-        root /usr/share/nginx/html; \
-        index index.html; \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
