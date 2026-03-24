@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # 1. Database PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: lignosuite-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: lignosuitedb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Backend Spring Boot (Costruito dalla cartella corrente '.')
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lignosuite-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/lignosuitedb
+      - SPRING_PROFILES_ACTIVE=secret
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # 3. Frontend Angular (Costruito dalla cartella a fianco '../')
+  frontend:
+    build:
+      # IL TRUCCO È QUI: Diciamo a Docker di salire di un livello e cercare la cartella del frontend
+      context: ../Ligno_Suite_-ESAME
+      dockerfile: Dockerfile
+    container_name: lignosuite-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
