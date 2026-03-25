@@ -40,7 +40,7 @@ services:
   frontend:
     build:
       # Cerca il frontend salendo di un livello
-      context: ../Ligno_Suite_-ESAME
+      context: ../Ligno_Suite_-ESAME-
       dockerfile: Dockerfile
     container_name: lignosuite-frontend
     ports:
