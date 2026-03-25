@@ -66,7 +66,7 @@ Apri il terminale all'interno della cartella del Backend (dove si trova il file 
 comando:
 
 ```bash
-cd Ligno_Suite_API-ESAME
+cd Ligno_Suite_API-ESAME-
 docker-compose up --build
 ```
 
