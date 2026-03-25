@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # 1. Database PostgreSQL
   db:
-    image: postgres:15-alpine
+    image: postgres:alpine
     container_name: lignosuite-db
     environment:
       POSTGRES_USER: postgres
