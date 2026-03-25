@@ -51,7 +51,7 @@ public class PreventivoDaoImpl implements PreventivoDao {
      */
     private final RowMapper<Preventivo> rowMapper = (rs, rowNum) -> {
 
-        System.out.println("Mapping del preventivo con ID: " + rs.getLong("id"));
+        // System.out.println("Mapping del preventivo con ID: " + rs.getLong("id"));
         // Creazione del proxy
         PreventivoProxy p = new PreventivoProxy(itemDao);
 

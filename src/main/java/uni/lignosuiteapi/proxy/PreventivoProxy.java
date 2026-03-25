@@ -46,10 +46,10 @@ public class PreventivoProxy extends Preventivo {
         // Se gli items non sono ancora stati caricati
         if (!isItemsLoaded) {
 
-            System.out.println(
-                    "PROXY attivato per il preventivo con ID: "
-                            + this.getId()
-            );
+//            System.out.println(
+//                    "PROXY attivato per il preventivo con ID: "
+//                            + this.getId()
+//            );
 
             // Recupera le righe dal database tramite il DAO
             List<PreventivoItem> righe = itemDao.findByPreventivoId(this.getId());
