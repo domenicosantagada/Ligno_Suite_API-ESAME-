@@ -13,8 +13,10 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # FONDAMENTALE: Passiamo il dump a Postgres che creerà le tabelle all'avvio
+      - ./database/lignosuitedb_dump.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,7 +39,7 @@ services:
   # 3. Frontend Angular (Costruito dalla cartella a fianco '../')
   frontend:
     build:
-      # IL TRUCCO È QUI: Diciamo a Docker di salire di un livello e cercare la cartella del frontend
+      # Cerca il frontend salendo di un livello
       context: ../Ligno_Suite_-ESAME
       dockerfile: Dockerfile
     container_name: lignosuite-frontend
