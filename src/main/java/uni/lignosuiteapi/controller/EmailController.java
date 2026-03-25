@@ -9,7 +9,7 @@ import uni.lignosuiteapi.service.EmailService;
 
 @RestController
 @RequestMapping("/api/email")
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = {"http://localhost:4200", "http://localhost"})
 public class EmailController {
 
     @Autowired
