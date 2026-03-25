@@ -14,11 +14,79 @@ falegnameria, comunicando in formato JSON con l'applicazione client (Frontend in
 * **Linguaggio:** Java 21
 * **Framework:** Spring Boot
 * **Accesso ai dati:** Spring JDBC Template / Pattern DAO
-* **Database:** PostgreSQL
+* **Database:** PostgreSQL (Dockerizzato)
 * **Build System:** Gradle Wrapper
 * **Integrazioni Esterne:** Google Gemini API (AI Generativa), JavaMailSender (Invio PDF)
+* **Orchestrazione:** Docker & Docker Compose
 
 ---
+
+## Avvio Rapido con Docker
+
+Il progetto è interamente dockerizzato. Questo permette di avviare **Database**, **Backend** e **Frontend** in un unico
+comando, senza dover installare Java o PostgreSQL localmente.
+
+### 1. Prerequisiti Docker
+
+* **Docker Desktop** installato e in esecuzione.
+* **Git** per la clonazione dei repository.
+
+### 2. Preparazione dei Repository (IMPORTANTE)
+
+Affinché Docker riesca a trovare e compilare entrambi i progetti, è necessario clonare sia il Backend che il Frontend
+all'interno della stessa cartella genitore.
+
+Apri il terminale, crea una cartella principale e clona i due repository in modo che siano **affiancati**:
+
+```bash
+# Crea e posizionati in una cartella di lavoro (es. LignoSuite-Project)
+mkdir LignoSuite-Project && cd LignoSuite-Project
+
+# Clona il Frontend
+git clone https://github.com/domenicosantagada/Ligno_Suite_-ESAME-.git
+
+# Clona il Backend
+git clone https://github.com/domenicosantagada/Ligno_Suite_API-ESAME-.git
+```
+
+### Configurazione API Key e Server Email
+
+Per questioni di sicurezza, le chiavi API e le password non sono tracciate su GitHub.
+
+1. Navigare nella cartella del backend in `Ligno_Suite_API-ESAME/src/main/resources/`.
+2. Rinominare il file `application-secret.properties.example` in `application-secret.properties`.
+3. Aprire il file e inserire:
+    * La propria API Key di Google Gemini.
+    * L'email e la password per l'SMTP di Gmail (è necessaria la "Password per le app" se si usa l'autenticazione a due
+      fattori).
+
+### Comando di Avvio
+
+Apri il terminale all'interno della cartella del Backend (dove si trova il file docker-compose.yml) ed esegui il
+comando:
+
+```bash
+cd Ligno_Suite_API-ESAME
+docker-compose up --build
+```
+
+### Cosa succede automaticamente:
+
+1. Viene creato il container del database e importato automaticamente il dump SQL presente in /database.
+
+2. Viene compilato ed eseguito il Backend Java.
+
+3. Viene compilato ed eseguito il Frontend Angular (servito tramite Nginx sulla porta 80).
+
+### Indirizzi Utili:
+
+- Frontend UI: http://localhost
+
+- Backend API: http://localhost:8080
+
+---
+
+## Avvio Manuale senza Docker
 
 ## Prerequisiti
 
