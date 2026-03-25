@@ -89,10 +89,14 @@ public class AuthController {
 
         /**
          * @RequestBody
-         * Converte il JSON inviato dal frontend in un oggetto Utente.
+         * Converte il JSON inviato dal frontend in un oggetto Utente. (Deserializzazione)
          */
 
         return utenteService.loginUser(credenziali);
+
+        // Il return restituisce l'utente autenticato al frontend, che può usarlo per gestire la sessione.
+        // ora avviene la serializzazione dell'oggetto Utente in JSON per inviarlo al frontend.
+        // sempre per merito di Jackson.
     }
 
     /**

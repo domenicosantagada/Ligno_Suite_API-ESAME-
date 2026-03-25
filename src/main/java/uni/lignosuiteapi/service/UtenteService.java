@@ -43,6 +43,9 @@ public class UtenteService {
     // Metodo per autenticare utente (Login)
     public Utente loginUser(Utente utenteCredenziali) {
 
+        // Mi creo un utente di tipoligia UtenteDao popolato con i dati del database
+        // quindi in questo caso faccio un findbyemail per cercare nel db l'utente con quell'email
+        // recupero i dati dal db e popolo l'untente temporaneo
         Utente utente = utenteDao.findByEmail(utenteCredenziali.getEmail());
 
         /**
