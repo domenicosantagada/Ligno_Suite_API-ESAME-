@@ -13,7 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // Serve per criptare le password
+    // Bean per criptare le password (usato quando si salvano nel DB)
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -21,15 +21,19 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) {
+
         http
-                // Disattiviamo CSRF
+                // Disabilitiamo il CSRF perché è una REST API
+                // (altrimenti le richieste POST possono essere bloccate)
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // Permettiamo tutto
+                // Permettiamo tutte le richieste senza autenticazione
+                // (non c'è controllo di sicurezza lato backend)
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll()
                 );
 
+        // Costruisce e restituisce la configurazione di sicurezza
         return http.build();
     }
 
