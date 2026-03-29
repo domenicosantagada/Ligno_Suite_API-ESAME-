@@ -19,22 +19,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) {
         http
-                // Disattiviamo il CSRF perché è una REST API
-                // altrimenti le POST vengono bloccate
                 .csrf(csrf -> csrf.disable())
 
-                // Abilitiamo il CORS (gestito nei controller)
-                .cors(cors -> {
-                })
-
-                // Permettiamo tutte le richieste senza controllo
-                // (la sicurezza la gestiamo lato Angular)
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll()
                 );
 
         return http.build();
     }
+
 }
