@@ -2,6 +2,7 @@ package uni.lignosuiteapi.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import uni.lignosuiteapi.dao.UtenteDao;
@@ -19,28 +20,28 @@ public class UtenteService {
     @Autowired
     private UtenteDao utenteDao;
 
-    // Metodo per registrare un nuovo utente.
+    // Il Service usa PasswordEncoder per criptare le password prima di salvarle e per verificare le password durante il login.
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+
+    // Metodo per registrare un nuovo utente
     public Utente registerUser(Utente utente) {
 
-        // Controlla se nel database esiste già un utente con la stessa email
+        // Non permettiamo a due utenti di usare la stessa email
         if (utenteDao.findByEmail(utente.getEmail()) != null) {
-
-            /**
-             * Se l'email esiste già, viene lanciata un'eccezione HTTP.
-             *
-             * HttpStatus.CONFLICT (409)
-             * Indica che c'è un conflitto con lo stato attuale della risorsa.
-             *
-             * Il messaggio verrà inviato al frontend.
-             */
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email già registrata.");
         }
 
-        // Salva l'utente nel database e restituisce l'utente appena creato.
+        // Hashing della password
+        String pwVisibile = utente.getPassword();
+        String pwHash = passwordEncoder.encode(pwVisibile);
+        utente.setPassword(pwHash);
+
         return utenteDao.save(utente);
     }
 
-    // Metodo per autenticare utente (Login)
+    // Metodo per loggare un utente
     public Utente loginUser(Utente utenteCredenziali) {
 
         // Mi creo un utente di tipoligia UtenteDao popolato con i dati del database
@@ -48,68 +49,32 @@ public class UtenteService {
         // recupero i dati dal db e popolo l'untente temporaneo
         Utente utente = utenteDao.findByEmail(utenteCredenziali.getEmail());
 
-        /**
-         * Verifica due condizioni:
-         *
-         * 1) L'utente non esiste
-         * 2) La password inserita non corrisponde a quella salvata
-         *
-         * Se una delle due è vera, il login fallisce.
-         */
-        if (utente == null || !utente.getPassword().equals(utenteCredenziali.getPassword())) {
-
-            /**
-             * HttpStatus.UNAUTHORIZED (401)
-             * Indica che le credenziali fornite non sono valide.
-             */
+        // Se l'utente non esiste, o se la password NON matcha, lanciamo subito errore 401!
+        if (utente == null || !passwordEncoder.matches(utenteCredenziali.getPassword(), utente.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email o password errati.");
         }
 
+        // Se arriva a questa riga, significa che utente esiste e la password è corretta
         return utente;
     }
 
-    // Metodo per aggiornare profilo utente
+    // Metodo per aggiornare un profilo utente
     public Utente updateUser(Long id, Utente datiAggiornati) {
 
         Utente utenteEsistente = utenteDao.findById(id);
 
-        // Se l'utente non esiste nel database
         if (utenteEsistente == null) {
-
-            /**
-             * HttpStatus.NOT_FOUND (404)
-             * Indica che la risorsa richiesta non è stata trovata.
-             */
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente non trovato");
         }
 
-        /**
-         * Controllo sull'email:
-         *
-         * Se l'utente sta modificando la propria email,
-         * bisogna verificare che non sia già utilizzata da un altro utente.
-         */
         if (!utenteEsistente.getEmail().equals(datiAggiornati.getEmail())) {
-
-            // Se l'email è già presente nel database
             if (utenteDao.findByEmail(datiAggiornati.getEmail()) != null) {
-
-                /**
-                 * HttpStatus.CONFLICT (409)
-                 * Segnala che l'email è già utilizzata da un altro utente.
-                 */
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Questa email è già in uso da un altro utente.");
             }
         }
 
-        /**
-         * Aggiornamento dei campi dell'utente.
-         *
-         * I nuovi valori ricevuti dal frontend sostituiscono quelli esistenti.
-         */
-
         utenteEsistente.setNomeAzienda(datiAggiornati.getNomeAzienda());
-        utenteEsistente.setNome(datiAggiornati.getNomeAzienda());
+        utenteEsistente.setNome(datiAggiornati.getNome());
         utenteEsistente.setNomeTitolare(datiAggiornati.getNomeTitolare());
         utenteEsistente.setCognomeTitolare(datiAggiornati.getCognomeTitolare());
         utenteEsistente.setTelefono(datiAggiornati.getTelefono());
@@ -122,13 +87,12 @@ public class UtenteService {
         utenteEsistente.setLogoBase64(datiAggiornati.getLogoBase64());
         utenteEsistente.setEmail(datiAggiornati.getEmail());
 
-        /**
-         * Salvataggio delle modifiche nel database.
-         *
-         * Il metodo update() del DAO aggiorna il record esistente.
-         *
-         * L'utente aggiornato viene restituito al frontend.
-         */
+        // generiamo l'hash della nuova password solo se è stata fornita una nuova password (non è null e non è vuota)
+        if (datiAggiornati.getPassword() != null && !datiAggiornati.getPassword().isEmpty()) {
+            String nuovaPwHash = passwordEncoder.encode(datiAggiornati.getPassword());
+            utenteEsistente.setPassword(nuovaPwHash);
+        }
+
         return utenteDao.update(utenteEsistente);
     }
 
