@@ -40,6 +40,16 @@ public class PreventiviController {
     @Autowired
     private PreventivoService preventivoService;
 
+    @PostMapping
+    public Preventivo createPreventivo(@RequestParam Long utenteId, @RequestBody Preventivo preventivo) {
+        return preventivoService.createPreventivo(utenteId, preventivo);
+    }
+
+    @PutMapping("/{id}")
+    public Preventivo updatePreventivo(@PathVariable Long id, @RequestParam Long utenteId, @RequestBody Preventivo preventivo) {
+        return preventivoService.updatePreventivo(id, preventivo, utenteId);
+    }
+
     /**
      * =========================
      * OTTENERE TUTTI I PREVENTIVI
@@ -64,47 +74,6 @@ public class PreventiviController {
         return preventivoService.getAllPreventivi(utenteId);
     }
 
-    /**
-     * =========================
-     * CREARE UN NUOVO PREVENTIVO
-     * =========================
-     * <p>
-     * Endpoint per creare un nuovo preventivo.
-     *
-     * @PostMapping Gestisce richieste HTTP POST all'URL:
-     * /api/preventivi
-     * @RequestBody Il JSON inviato dal frontend viene convertito
-     * automaticamente in un oggetto Java Preventivo.
-     */
-    @PostMapping
-    public Preventivo createPreventivo(@RequestBody Preventivo preventivo) {
-
-        /**
-         * Il Service chiama il DAO per salvare il nuovo preventivo nel database.
-         */
-        return preventivoService.createPreventivo(preventivo);
-    }
-
-    /**
-     * =========================
-     * AGGIORNARE UN PREVENTIVO
-     * =========================
-     * <p>
-     * Endpoint per aggiornare un preventivo esistente.
-     *
-     * @PutMapping("/{id}") Gestisce richieste HTTP PUT all'URL:
-     * /api/preventivi/{id}
-     * <p>
-     * {id} rappresenta l'identificativo del preventivo.
-     */
-    @PutMapping("/{id}")
-    public Preventivo updatePreventivo(@PathVariable Long id, @RequestBody Preventivo preventivo) {
-
-        /**
-         * Il Service chiama il DAO per aggiornare il preventivo nel database.
-         */
-        return preventivoService.updatePreventivo(id, preventivo);
-    }
 
     /**
      * =========================

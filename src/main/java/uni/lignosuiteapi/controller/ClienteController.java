@@ -66,57 +66,16 @@ public class ClienteController {
         return clienteService.getAllClienti(utenteId);
     }
 
-    /**
-     * =========================
-     * CREARE UN NUOVO CLIENTE
-     * =========================
-     * <p>
-     * Endpoint per inserire un nuovo cliente nel database.
-     *
-     * @PostMapping Gestisce richieste HTTP POST all'URL:
-     * /api/clienti
-     * <p>
-     * POST viene utilizzato per creare una nuova risorsa.
-     * @RequestBody Il JSON inviato dal frontend viene convertito automaticamente
-     * in un oggetto Java di tipo Cliente.
-     */
     @PostMapping
-    public Cliente createCliente(@RequestBody Cliente cliente) {
-
-        /**
-         * Il Service chiama il DAO per salvare il nuovo cliente nel database.
-         */
-        return clienteService.createCliente(cliente);
+    public Cliente createCliente(@RequestParam Long utenteId, @RequestBody Cliente cliente) {
+        return clienteService.createCliente(utenteId, cliente);
     }
 
-    /**
-     * =========================
-     * AGGIORNARE UN CLIENTE
-     * =========================
-     * <p>
-     * Endpoint per aggiornare i dati di un cliente esistente.
-     *
-     * @PutMapping("/{id}") Gestisce richieste HTTP PUT all'URL:
-     * /api/clienti/{id}
-     * <p>
-     * PUT viene utilizzato per aggiornare una risorsa esistente.
-     * <p>
-     * {id} rappresenta l'identificativo del cliente da aggiornare.
-     */
     @PutMapping("/{id}")
-    public Cliente updateCliente(@PathVariable Long id, @RequestBody Cliente cliente) {
-
-        /**
-         * @PathVariable
-         * Permette di ottenere il valore dell'id direttamente dall'URL.
-         *
-         * @RequestBody
-         * Converte il JSON ricevuto dal frontend in un oggetto Cliente.
-         */
-
-        // Il Service chiama il DAO per aggiornare il cliente nel database.
-        return clienteService.updateCliente(id, cliente);
+    public Cliente updateCliente(@PathVariable Long id, @RequestParam Long utenteId, @RequestBody Cliente cliente) {
+        return clienteService.updateCliente(id, cliente, utenteId);
     }
+
 
     /**
      * =========================

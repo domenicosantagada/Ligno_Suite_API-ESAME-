@@ -39,12 +39,12 @@ public class UtenteService {
      * Autenticazione utente
      */
     public Utente loginUser(Utente utenteCredenziali) {
-        Utente utente = utenteRepository
-                .findByEmail(utenteCredenziali.getEmail())
-                .orElse(null);
+        // Normalizziamo in minuscolo per evitare errori di digitazione
+        String email = utenteCredenziali.getEmail().trim().toLowerCase();
 
-        if (utente == null ||
-                !passwordEncoder.matches(utenteCredenziali.getPassword(), utente.getPassword())) {
+        Utente utente = utenteRepository.findByEmail(email).orElse(null);
+
+        if (utente == null || !passwordEncoder.matches(utenteCredenziali.getPassword(), utente.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email o password errati.");
         }
 
@@ -79,9 +79,13 @@ public class UtenteService {
         utenteEsistente.setLogoBase64(datiAggiornati.getLogoBase64());
         utenteEsistente.setEmail(datiAggiornati.getEmail());
 
-        // Aggiorna password solo se presente
         if (datiAggiornati.getPassword() != null && !datiAggiornati.getPassword().isEmpty()) {
-            utenteEsistente.setPassword(passwordEncoder.encode(datiAggiornati.getPassword()));
+            // Se la password NON inizia per "$2a$" (il prefisso di BCrypt), significa che l'utente
+            // ha digitato una password nuova in chiaro. Allora la criptiamo.
+            // Altrimenti la ignoriamo perché è già criptata!
+            if (!datiAggiornati.getPassword().startsWith("$2a$")) {
+                utenteEsistente.setPassword(passwordEncoder.encode(datiAggiornati.getPassword()));
+            }
         }
 
         return utenteRepository.save(utenteEsistente);
