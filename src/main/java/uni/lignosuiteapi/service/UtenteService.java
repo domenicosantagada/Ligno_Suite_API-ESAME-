@@ -5,72 +5,64 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import uni.lignosuiteapi.dao.UtenteDao;
 import uni.lignosuiteapi.model.Utente;
+import uni.lignosuiteapi.repository.UtenteRepository;
 
 import java.util.List;
 
 /**
- * Service per la gestione degli utenti.
+ * Service per gestione utenti
  */
 @Service
 public class UtenteService {
 
-    // Il Service chiama il DAO per accedere ai dati.
     @Autowired
-    private UtenteDao utenteDao;
+    private UtenteRepository utenteRepository;
 
-    // Il Service usa PasswordEncoder per criptare le password prima di salvarle e per verificare le password durante il login.
     @Autowired
     private PasswordEncoder passwordEncoder;
 
 
-    // Metodo per registrare un nuovo utente
+    /**
+     * Registrazione utente
+     */
     public Utente registerUser(Utente utente) {
-
-        // Non permettiamo a due utenti di usare la stessa email
-        if (utenteDao.findByEmail(utente.getEmail()) != null) {
+        if (utenteRepository.findByEmail(utente.getEmail()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email già registrata.");
         }
 
-        // Hashing della password
-        String pwVisibile = utente.getPassword();
-        String pwHash = passwordEncoder.encode(pwVisibile);
-        utente.setPassword(pwHash);
-
-        return utenteDao.save(utente);
+        utente.setPassword(passwordEncoder.encode(utente.getPassword()));
+        return utenteRepository.save(utente);
     }
 
-    // Metodo per loggare un utente
+    /**
+     * Autenticazione utente
+     */
     public Utente loginUser(Utente utenteCredenziali) {
+        Utente utente = utenteRepository
+                .findByEmail(utenteCredenziali.getEmail())
+                .orElse(null);
 
-        // Mi creo un utente di tipoligia UtenteDao popolato con i dati del database
-        // quindi in questo caso faccio un findbyemail per cercare nel db l'utente con quell'email
-        // recupero i dati dal db e popolo l'untente temporaneo
-        Utente utente = utenteDao.findByEmail(utenteCredenziali.getEmail());
-
-        // Se l'utente non esiste, o se la password NON matcha, lanciamo subito errore 401!
-        if (utente == null || !passwordEncoder.matches(utenteCredenziali.getPassword(), utente.getPassword())) {
+        if (utente == null ||
+                !passwordEncoder.matches(utenteCredenziali.getPassword(), utente.getPassword())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Email o password errati.");
         }
 
-        // Se arriva a questa riga, significa che utente esiste e la password è corretta
         return utente;
     }
 
-    // Metodo per aggiornare un profilo utente
+    /**
+     * Aggiornamento profilo utente
+     */
     public Utente updateUser(Long id, Utente datiAggiornati) {
 
-        Utente utenteEsistente = utenteDao.findById(id);
+        Utente utenteEsistente = utenteRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente non trovato"));
 
-        if (utenteEsistente == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente non trovato");
-        }
-
-        if (!utenteEsistente.getEmail().equals(datiAggiornati.getEmail())) {
-            if (utenteDao.findByEmail(datiAggiornati.getEmail()) != null) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Questa email è già in uso da un altro utente.");
-            }
+        // Verifica unicità email
+        if (!utenteEsistente.getEmail().equals(datiAggiornati.getEmail()) &&
+                utenteRepository.findByEmail(datiAggiornati.getEmail()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email già in uso.");
         }
 
         utenteEsistente.setNomeAzienda(datiAggiornati.getNomeAzienda());
@@ -87,22 +79,26 @@ public class UtenteService {
         utenteEsistente.setLogoBase64(datiAggiornati.getLogoBase64());
         utenteEsistente.setEmail(datiAggiornati.getEmail());
 
-        // generiamo l'hash della nuova password solo se è stata fornita una nuova password (non è null e non è vuota)
+        // Aggiorna password solo se presente
         if (datiAggiornati.getPassword() != null && !datiAggiornati.getPassword().isEmpty()) {
-            String nuovaPwHash = passwordEncoder.encode(datiAggiornati.getPassword());
-            utenteEsistente.setPassword(nuovaPwHash);
+            utenteEsistente.setPassword(passwordEncoder.encode(datiAggiornati.getPassword()));
         }
 
-        return utenteDao.update(utenteEsistente);
+        return utenteRepository.save(utenteEsistente);
     }
 
-    // Metodo per recuperare tutti gli utenti
+    /**
+     * Lista utenti
+     */
     public List<Utente> getAllUtenti() {
-        return utenteDao.findAll();
+        return utenteRepository.findAll();
     }
 
-    // Metodo per recuperare un singolo utente dal suo ID
+    /**
+     * Recupero utente per ID
+     */
     public Utente getUtenteById(Long id) {
-        return utenteDao.findById(id);
+        return utenteRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente non trovato"));
     }
 }

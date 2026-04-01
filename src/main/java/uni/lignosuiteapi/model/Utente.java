@@ -1,80 +1,69 @@
 package uni.lignosuiteapi.model;
 
+import jakarta.persistence.*;
 import lombok.Data;
 
 /**
- * Classe modello che rappresenta un utente del sistema.
- * <p>
- * Questa classe corrisponde alla tabella "utente" nel database
- * e contiene tutti i campi relativi al profilo dell'utente.
- *
- * @Data (Lombok)
- * Genera automaticamente:
- * - getter e setter
- * - toString()
- * - equals() e hashCode()
- * <p>
- * In questo modo evitiamo di scrivere manualmente molto codice.
+ * Entità JPA Utente (tabella "utente")
  */
 @Data
+@Entity
+@Table(name = "utente")
 public class Utente {
 
-    // Identificativo univoco dell'utente (chiave primaria nel database)
+    // === ID ===
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Ruolo di utente (admin, falegname, cliente)
+    // === Accesso ===
     private String ruolo;
-
-    // Credenziali di accesso
+    @Column(unique = true, nullable = false)
     private String email;
     private String password;
 
-    // Informazioni personali / aziendali
+    // === Anagrafica ===
     private String nome;
     private String nomeAzienda;
     private String nomeTitolare;
     private String cognomeTitolare;
 
-    // Contatti
+    // === Contatti ===
     private String telefono;
 
-    // Dati fiscali
+    // === Dati fiscali ===
     private String partitaIva;
     private String codiceFiscale;
 
-    // Indirizzo
+    // === Indirizzo ===
     private String indirizzo;
     private String citta;
     private String cap;
     private String provincia;
 
-    // Logo aziendale salvato come stringa Base64
+    // === Logo ===
+    @Column(columnDefinition = "TEXT")
     private String logoBase64;
 
-
     /**
-     * Metodo di formattazione dei dati.
-     * <p>
-     * Viene richiamato manualmente dal DAO prima di salvare o aggiornare
-     * un utente nel database.
-     * <p>
-     * Serve per normalizzare i dati inseriti dall'utente
-     * (es. rimuovere spazi, sistemare maiuscole/minuscole).
+     * Normalizza i campi prima di INSERT/UPDATE
      */
+    @PrePersist
+    @PreUpdate
     public void formattaDati() {
 
-        // Imposta il ruolo di default se non specificato (per sicurezza)
+        // Ruolo
         if (this.ruolo == null || this.ruolo.trim().isEmpty()) {
             this.ruolo = "FALEGNAME";
         } else {
             this.ruolo = this.ruolo.trim().toUpperCase();
         }
 
-        // Email in minuscolo senza spazi
+        // Email
         if (this.email != null)
             this.email = this.email.trim().toLowerCase();
 
-        // Capitalizzazione delle parole (Nome Cognome ecc.)
+        // Anagrafica
         if (this.nome != null)
             this.nome = capitalizzaParole(this.nome);
 
@@ -87,24 +76,25 @@ public class Utente {
         if (this.cognomeTitolare != null)
             this.cognomeTitolare = capitalizzaParole(this.cognomeTitolare);
 
+        // Indirizzo
         if (this.indirizzo != null)
             this.indirizzo = capitalizzaParole(this.indirizzo);
 
         if (this.citta != null)
             this.citta = capitalizzaParole(this.citta);
 
-        // Partita IVA e Codice Fiscale in maiuscolo
+        // Dati fiscali
         if (this.partitaIva != null)
             this.partitaIva = this.partitaIva.trim().toUpperCase();
 
         if (this.codiceFiscale != null)
             this.codiceFiscale = this.codiceFiscale.trim().toUpperCase();
 
-        // Provincia in maiuscolo
+        // Provincia
         if (this.provincia != null)
             this.provincia = this.provincia.trim().toUpperCase();
 
-        // Pulizia di altri campi
+        // Altri campi
         if (this.telefono != null)
             this.telefono = this.telefono.trim();
 
@@ -112,18 +102,12 @@ public class Utente {
             this.cap = this.cap.trim();
     }
 
-
     /**
-     * Metodo di utilità che capitalizza le parole di una stringa.
-     * <p>
-     * Esempio:
-     * "mario rossi" -> "Mario Rossi"
+     * Capitalizza ogni parola
      */
     private String capitalizzaParole(String str) {
 
         str = str.trim();
-
-        // Se la stringa è vuota ritorna direttamente
         if (str.isEmpty())
             return str;
 
@@ -131,9 +115,7 @@ public class Utente {
         StringBuilder risultato = new StringBuilder();
 
         for (String parola : parole) {
-
-            if (parola.length() > 0) {
-
+            if (!parola.isEmpty()) {
                 risultato.append(Character.toUpperCase(parola.charAt(0)))
                         .append(parola.substring(1).toLowerCase())
                         .append(" ");
