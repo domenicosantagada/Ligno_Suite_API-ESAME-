@@ -51,7 +51,7 @@ public class Cliente {
         StringBuilder risultato = new StringBuilder();
 
         for (String parola : parole) {
-            if (parola.length() > 0) {
+            if (!parola.isEmpty()) {
                 risultato.append(Character.toUpperCase(parola.charAt(0)))
                         .append(parola.substring(1).toLowerCase())
                         .append(" ");
