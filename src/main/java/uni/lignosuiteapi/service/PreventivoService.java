@@ -4,179 +4,113 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import uni.lignosuiteapi.dao.PreventivoDao;
 import uni.lignosuiteapi.model.Preventivo;
+import uni.lignosuiteapi.model.PreventivoItem;
+import uni.lignosuiteapi.model.Utente;
+import uni.lignosuiteapi.repository.PreventivoRepository;
+import uni.lignosuiteapi.repository.UtenteRepository;
 
 import java.util.List;
 
 @Service
 public class PreventivoService {
 
-    /**
-     * DAO per la gestione dei Preventivi.
-     */
     @Autowired
-    private PreventivoDao preventivoDao;
+    private PreventivoRepository preventivoRepository;
 
-    // Metodo per verificare se esiste già un preventivo con lo stesso numero per un utente specifico
+    @Autowired
+    private UtenteRepository utenteRepository; // Ci serve per associare l'utente!
+
     private boolean existsInvoiceNumber(Long utenteId, Long invoiceNumber) {
-        /**
-         * Recupera tutti i preventivi dell'utente
-         * e utilizza uno stream per verificare se
-         * almeno uno ha lo stesso numero.
-         */
-        return preventivoDao.findAllByUtenteId(utenteId).stream()
-                .anyMatch(p -> p.getInvoiceNumber().equals(invoiceNumber));
+        // Usa la query super veloce del repository
+        return preventivoRepository.existsByUtenteIdAndInvoiceNumber(utenteId, invoiceNumber);
     }
 
-    // Metodo per recuperare tutti i preventivi associati a un utente specifico
     public List<Preventivo> getAllPreventivi(Long utenteId) {
-        /**
-         * Il DAO recupera dal database tutti i preventivi
-         * associati all'utente specificato.
-         */
-        return preventivoDao.findAllByUtenteId(utenteId);
+        return preventivoRepository.findByUtenteId(utenteId);
     }
 
-    // Metodo per creare un nuovo preventivo
-    public Preventivo createPreventivo(Preventivo preventivo) {
-        /**
-         * Controllo per verificare se il numero preventivo
-         * è già utilizzato da un altro preventivo dello stesso utente.
-         */
-        if (existsInvoiceNumber(preventivo.getUtenteId(), preventivo.getInvoiceNumber())) {
+    // Passiamo l'utenteId dal controller per sicurezza e architettura
+    public Preventivo createPreventivo(Long utenteId, Preventivo preventivo) {
+        Utente utente = utenteRepository.findById(utenteId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente non trovato"));
 
-            /**
-             * HttpStatus.CONFLICT (409)
-             * Indica un conflitto perché il numero preventivo è già utilizzato.
-             */
+        if (existsInvoiceNumber(utenteId, preventivo.getInvoiceNumber())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Numero preventivo già in uso.");
         }
 
-        /**
-         * Se il numero è disponibile,
-         * il preventivo viene salvato nel database.
-         */
-        return preventivoDao.save(preventivo);
-    }
+        preventivo.setUtente(utente);
 
-    // Metodo per aggiornare un preventivo esistente
-    public Preventivo updatePreventivo(Long id, Preventivo preventivo) {
-        /**
-         * Recupera il preventivo esistente dal database.
-         */
-        Preventivo preventivoEsistente = preventivoDao.findById(id);
-
-        // Se il preventivo non esiste
-        if (preventivoEsistente == null) {
-
-            /**
-             * HttpStatus.NOT_FOUND (404)
-             * Il preventivo richiesto non è stato trovato.
-             */
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Impossibile aggiornare: preventivo non trovato.");
-        }
-
-        /**
-         * Controllo di sicurezza:
-         *
-         * Verifica che il preventivo appartenga
-         * all'utente che sta tentando di modificarlo.
-         */
-        if (!preventivoEsistente.getUtenteId().equals(preventivo.getUtenteId())) {
-
-            /**
-             * HttpStatus.FORBIDDEN (403)
-             * L'utente non ha il permesso di modificare questo preventivo.
-             */
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
-        }
-
-        /**
-         * Se il numero del preventivo è stato modificato,
-         * bisogna verificare che non sia già utilizzato
-         * da un altro preventivo dello stesso utente.
-         */
-        if (!preventivoEsistente.getInvoiceNumber().equals(preventivo.getInvoiceNumber())) {
-
-            if (existsInvoiceNumber(preventivo.getUtenteId(), preventivo.getInvoiceNumber())) {
-
-                /**
-                 * HttpStatus.CONFLICT (409)
-                 * Il numero preventivo è già utilizzato.
-                 */
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Numero preventivo già in uso.");
+        // Fondamentale: per ogni item, dobbiamo dire che appartiene a questo preventivo
+        if (preventivo.getItems() != null) {
+            for (PreventivoItem item : preventivo.getItems()) {
+                item.setPreventivo(preventivo);
             }
         }
 
-        /**
-         * Impostiamo manualmente l'id del preventivo
-         * per assicurarci che venga aggiornato il record corretto.
-         */
-        preventivo.setId(id);
-
-        /**
-         * Il DAO aggiorna il preventivo nel database.
-         */
-        return preventivoDao.update(preventivo);
-
+        // Salva il Preventivo e in automatico salva anche tutti gli Item nella tabella preventivo_item!
+        return preventivoRepository.save(preventivo);
     }
 
-    // Metodo per eliminare un preventivo
-    public void deletePreventivo(Long id, Long utenteId) {
-        /**
-         * Recupera il preventivo dal database.
-         */
-        Preventivo preventivoEsistente = preventivoDao.findById(id);
+    public Preventivo updatePreventivo(Long id, Preventivo datiAggiornati, Long utenteId) {
+        Preventivo preventivoEsistente = preventivoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Preventivo non trovato."));
 
-        // Se il preventivo non esiste
-        if (preventivoEsistente == null) {
-
-            /**
-             * HttpStatus.NOT_FOUND (404)
-             * Il preventivo richiesto non esiste.
-             */
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Preventivo non trovato.");
-        }
-
-        /**
-         * Controllo di sicurezza:
-         *
-         * Verifica che il preventivo appartenga
-         * all'utente che sta tentando di eliminarlo.
-         */
-        if (!preventivoEsistente.getUtenteId().equals(utenteId)) {
-
-            /**
-             * HttpStatus.FORBIDDEN (403)
-             * L'utente non ha i permessi per eliminare questo preventivo.
-             */
+        // Controllo permessi
+        if (!preventivoEsistente.getUtente().getId().equals(utenteId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
         }
 
-        /**
-         * Se tutti i controlli sono superati,
-         * il preventivo viene eliminato dal database.
-         */
-        preventivoDao.deleteById(id, utenteId);
+        if (!preventivoEsistente.getInvoiceNumber().equals(datiAggiornati.getInvoiceNumber()) &&
+                existsInvoiceNumber(utenteId, datiAggiornati.getInvoiceNumber())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Numero preventivo già in uso.");
+        }
+
+        // Travaso Dati anagrafici e totali
+        preventivoEsistente.setInvoiceNumber(datiAggiornati.getInvoiceNumber());
+        preventivoEsistente.setDate(datiAggiornati.getDate());
+        preventivoEsistente.setFromName(datiAggiornati.getFromName());
+        preventivoEsistente.setFromEmail(datiAggiornati.getFromEmail());
+        preventivoEsistente.setFromPiva(datiAggiornati.getFromPiva());
+        preventivoEsistente.setToName(datiAggiornati.getToName());
+        preventivoEsistente.setToEmail(datiAggiornati.getToEmail());
+        preventivoEsistente.setToPiva(datiAggiornati.getToPiva());
+        preventivoEsistente.setTaxRate(datiAggiornati.getTaxRate());
+        preventivoEsistente.setSubtotal(datiAggiornati.getSubtotal());
+        preventivoEsistente.setTaxAmount(datiAggiornati.getTaxAmount());
+        preventivoEsistente.setDiscount(datiAggiornati.getDiscount());
+        preventivoEsistente.setTotal(datiAggiornati.getTotal());
+
+        // Travaso degli Items! Grazie a orphanRemoval=true, Spring farà da solo la comparazione
+        // per capire quali item vanno aggiornati, quali inseriti e quali cancellati.
+        preventivoEsistente.getItems().clear(); // Svuota i vecchi
+        if (datiAggiornati.getItems() != null) {
+            for (PreventivoItem item : datiAggiornati.getItems()) {
+                item.setPreventivo(preventivoEsistente); // Riassocia il nuovo item
+                preventivoEsistente.getItems().add(item);
+            }
+        }
+
+        return preventivoRepository.save(preventivoEsistente);
     }
 
-    // Metodo per calcolare il prossimo numero preventivo disponibile
+    public void deletePreventivo(Long id, Long utenteId) {
+        Preventivo preventivoEsistente = preventivoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Preventivo non trovato."));
+
+        if (!preventivoEsistente.getUtente().getId().equals(utenteId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
+        }
+
+        // Questo cancellerà in automatico dal DB anche tutti i PreventivoItem collegati!
+        preventivoRepository.delete(preventivoEsistente);
+    }
+
     public Long getNextInvoiceNumber(Long utenteId) {
-
-        /**
-         * Il DAO calcola il prossimo numero preventivo
-         * disponibile per l'utente specificato.
-         */
-        return preventivoDao.getNextInvoiceNumber(utenteId);
+        return preventivoRepository.getNextInvoiceNumber(utenteId);
     }
 
-    // Metodo per recuperare tutti i preventivi associati a un cliente specifico
     public List<Preventivo> getPreventiviPerCliente(String email) {
-
-        /**
-         * Il DAO recupera tutti i preventivi associati alla specifica email del cliente.
-         */
-        return preventivoDao.findAllByToEmail(email);
+        return preventivoRepository.findByToEmail(email);
     }
 }
