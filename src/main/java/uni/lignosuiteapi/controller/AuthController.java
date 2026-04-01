@@ -28,4 +28,9 @@ public class AuthController {
     public Utente updateProfilo(@PathVariable Long id, @RequestBody Utente datiAggiornati) {
         return utenteService.updateUser(id, datiAggiornati);
     }
+
+    @GetMapping("/{id}")
+    public Utente getUtente(@PathVariable Long id) {
+        return utenteService.getUtenteById(id);
+    }
 }
