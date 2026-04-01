@@ -4,61 +4,68 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import uni.lignosuiteapi.dao.ClienteDao;
 import uni.lignosuiteapi.model.Cliente;
+import uni.lignosuiteapi.model.Utente;
+import uni.lignosuiteapi.repository.ClienteRepository;
+import uni.lignosuiteapi.repository.UtenteRepository;
 
 import java.util.List;
 
-/**
- * Service per la gestione dei clienti.
- */
 @Service
 public class ClienteService {
 
-    // Il Service chiama il DAO per accedere ai dati.
     @Autowired
-    private ClienteDao clienteDao;
+    private ClienteRepository clienteRepository;
+
+    @Autowired
+    private UtenteRepository utenteRepository; // Serve per associare il cliente all'utente
 
     public List<Cliente> getAllClientiDb() {
-        return clienteDao.findAll();
+        return clienteRepository.findAll();
     }
 
     public List<Cliente> getAllClienti(Long utenteId) {
-        return clienteDao.findAllByUtenteId(utenteId);
+        return clienteRepository.findByUtenteId(utenteId);
     }
 
-    public Cliente createCliente(Cliente cliente) {
-        // Qui in futuro potresti aggiungere logiche, es:
-        // "Se il cliente non ha la Partita IVA, metti 'N/D'"
-        return clienteDao.save(cliente);
+    // Aggiunto parametro utenteId per creare la relazione in modo corretto
+    public Cliente createCliente(Long utenteId, Cliente cliente) {
+        Utente utente = utenteRepository.findById(utenteId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente non trovato"));
+
+        cliente.setUtente(utente);
+        return clienteRepository.save(cliente);
     }
 
-    public Cliente updateCliente(Long id, Cliente cliente) {
+    // Aggiunto parametro utenteId per i controlli di sicurezza
+    public Cliente updateCliente(Long id, Cliente datiAggiornati, Long utenteId) {
+        Cliente clienteEsistente = clienteRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Impossibile aggiornare: cliente non trovato."));
+
         // LOGICA DI BUSINESS: Verifichiamo che l'utente stia modificando un SUO cliente
-        Cliente clienteEsistente = clienteDao.findById(id);
-
-        if (clienteEsistente == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Impossibile aggiornare: cliente non trovato.");
-        }
-        if (!clienteEsistente.getUtenteId().equals(cliente.getUtenteId())) {
+        if (!clienteEsistente.getUtente().getId().equals(utenteId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
         }
 
-        cliente.setId(id);
-        return clienteDao.update(cliente);
+        // Travaso dei dati
+        clienteEsistente.setNome(datiAggiornati.getNome());
+        clienteEsistente.setEmail(datiAggiornati.getEmail());
+        clienteEsistente.setTelefono(datiAggiornati.getTelefono());
+        clienteEsistente.setPartitaIva(datiAggiornati.getPartitaIva());
+
+        // La formattaDati() avverrà in automatico grazie a @PreUpdate
+        return clienteRepository.save(clienteEsistente);
     }
 
     public void deleteCliente(Long id, Long utenteId) {
-        // LOGICA DI BUSINESS: Verifichiamo prima di eliminare
-        Cliente clienteEsistente = clienteDao.findById(id);
+        Cliente clienteEsistente = clienteRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente non trovato."));
 
-        if (clienteEsistente == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente non trovato.");
-        }
-        if (!clienteEsistente.getUtenteId().equals(utenteId)) {
+        // LOGICA DI BUSINESS: Verifichiamo prima di eliminare
+        if (!clienteEsistente.getUtente().getId().equals(utenteId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
         }
 
-        clienteDao.deleteById(id, utenteId);
+        clienteRepository.delete(clienteEsistente);
     }
 }
