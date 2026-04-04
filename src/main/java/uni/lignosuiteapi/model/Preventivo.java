@@ -1,18 +1,26 @@
 package uni.lignosuiteapi.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "preventivo")
 public class Preventivo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // @EqualsAndHashCode.Include: include solo l'id nel calcolo di equals() e hashCode()
+    @EqualsAndHashCode.Include
     private Long id;
 
     private Long invoiceNumber;
@@ -23,7 +31,9 @@ public class Preventivo {
     @JoinColumn(name = "utente_id", nullable = false)
     private Utente utente;
 
-    private String date;
+    // Usiamo LocalDate e forziamo la formattazione come String per non rompere il frontend Angular
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate date;
 
     private String fromName;
     private String fromEmail;

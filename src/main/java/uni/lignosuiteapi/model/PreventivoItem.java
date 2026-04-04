@@ -2,9 +2,15 @@ package uni.lignosuiteapi.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+import java.math.BigDecimal;
+
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "preventivo_item")
 public class PreventivoItem {
@@ -14,6 +20,7 @@ public class PreventivoItem {
     // e restituirà il VERO Id numerico generato dal database.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     // === RELAZIONE BIDIREZIONALE: L'Item sa a quale preventivo appartiene ===
@@ -26,14 +33,14 @@ public class PreventivoItem {
     private String description;
 
     @Column(nullable = false)
-    private Double quantity;
+    private BigDecimal quantity;
 
     private String unitaMisura;
 
     @Column(nullable = false)
-    private Double rate;
+    private BigDecimal rate;
 
-    private Double amount;
+    private BigDecimal amount;
 
     // === TRUCCHETTO HIBERNATE: Calcolo automatico ===
     // Calcoliamo automaticamente il prezzo totale (quantità * prezzo unitario)
@@ -42,9 +49,10 @@ public class PreventivoItem {
     @PreUpdate
     public void calcolaAmount() {
         if (this.quantity != null && this.rate != null) {
-            this.amount = this.quantity * this.rate;
+            // Con BigDecimal si usa multiply() per le moltiplicazioni
+            this.amount = this.quantity.multiply(this.rate);
         } else {
-            this.amount = 0.0;
+            this.amount = BigDecimal.ZERO;
         }
     }
 }
