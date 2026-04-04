@@ -1,6 +1,5 @@
 package uni.lignosuiteapi.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,11 +15,14 @@ import java.util.List;
 @Service
 public class UtenteService {
 
-    @Autowired
-    private UtenteRepository utenteRepository;
+    private final UtenteRepository utenteRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    // CONSTRUCTOR INJECTION: Addio @Autowired
+    public UtenteService(UtenteRepository utenteRepository, PasswordEncoder passwordEncoder) {
+        this.utenteRepository = utenteRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
 
     /**

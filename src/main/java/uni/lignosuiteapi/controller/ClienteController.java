@@ -1,8 +1,6 @@
 package uni.lignosuiteapi.controller;
 
-// Import delle classi necessarie per il controller REST
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import uni.lignosuiteapi.model.Cliente;
 import uni.lignosuiteapi.service.ClienteService;
@@ -10,107 +8,76 @@ import uni.lignosuiteapi.service.ClienteService;
 import java.util.List;
 
 /**
- * Controller REST per la gestione dei clienti.
- * <p>
- * Questo controller espone gli endpoint API che permettono al frontend
- * (Angular) di effettuare operazioni CRUD sui clienti:
- * <p>
- * - Recuperare la lista dei clienti
- * - Creare un nuovo cliente
- * - Aggiornare un cliente
- * - Eliminare un cliente
- *
- * @RestController Indica a Spring Boot che questa classe è un controller REST.
- * I metodi restituiscono direttamente dati JSON nella risposta HTTP.
- * @RequestMapping("/api/clienti") Definisce il prefisso dell'URL per tutti gli endpoint di questo controller.
- * Tutte le rotte inizieranno quindi con /api/clienti.
- * @CrossOrigin Permette al frontend Angular (che gira su localhost:4200)
- * di effettuare richieste HTTP verso questo backend.
+ * Controller REST per la gestione dei clienti (Rubrica).
  */
 @RestController
 @RequestMapping("/api/clienti")
-@CrossOrigin(origins = {"http://localhost:4200", "http://localhost"})
 public class ClienteController {
 
-    /**
-     * @Autowired Permette a Spring di iniettare automaticamente l'oggetto ClienteService.
-     * ClienteService si occupa di gestire le operazioni CRUD sui clienti.
-     */
-    @Autowired
-    private ClienteService clienteService;
+    private final ClienteService clienteService;
 
+    // CONSTRUCTOR INJECTION: Sostituisce @Autowired
+    public ClienteController(ClienteService clienteService) {
+        this.clienteService = clienteService;
+    }
 
     /**
      * =========================
      * OTTENERE TUTTI I CLIENTI DI UN UTENTE
      * =========================
-     * <p>
-     * Endpoint per recuperare tutti i clienti appartenenti
-     * ad uno specifico utente.
-     *
-     * @GetMapping Questo metodo gestisce richieste HTTP GET all'URL:
-     * /api/clienti
-     * @RequestParam Permette di leggere un parametro dalla query dell'URL.
-     * <p>
-     * Esempio di chiamata:
-     * GET /api/clienti?utenteId=1
-     * <p>
-     * In questo modo ogni utente vede solo i propri clienti.
      */
     @GetMapping
-    public List<Cliente> getAllClienti(@RequestParam Long utenteId) {
-
-        /**
-         * Il Service chiama il DAO per recuperare i clienti dal database.
-         */
+    public List<Cliente> getAllClienti(Authentication authentication) {
+        // Estraiamo l'ID utente in modo sicuro dal Token JWT
+        Long utenteId = (Long) authentication.getPrincipal();
         return clienteService.getAllClienti(utenteId);
     }
 
+    /**
+     * =========================
+     * CREARE UN NUOVO CLIENTE
+     * =========================
+     */
     @PostMapping
-    public Cliente createCliente(@RequestParam Long utenteId, @RequestBody Cliente cliente) {
+    public Cliente createCliente(Authentication authentication, @RequestBody Cliente cliente) {
+        Long utenteId = (Long) authentication.getPrincipal();
         return clienteService.createCliente(utenteId, cliente);
     }
 
+    /**
+     * =========================
+     * AGGIORNARE UN CLIENTE
+     * =========================
+     */
     @PutMapping("/{id}")
-    public Cliente updateCliente(@PathVariable Long id, @RequestParam Long utenteId, @RequestBody Cliente cliente) {
+    public Cliente updateCliente(@PathVariable Long id, Authentication authentication, @RequestBody Cliente cliente) {
+        Long utenteId = (Long) authentication.getPrincipal();
         return clienteService.updateCliente(id, cliente, utenteId);
     }
-
 
     /**
      * =========================
      * ELIMINARE UN CLIENTE
      * =========================
-     * <p>
-     * Endpoint per cancellare un cliente dal database.
-     *
-     * @DeleteMapping("/{id}") Gestisce richieste HTTP DELETE all'URL:
-     * /api/clienti/{id}
-     * <p>
-     * DELETE viene utilizzato per eliminare una risorsa.
      */
     @DeleteMapping("/{id}")
-    public void deleteCliente(@PathVariable Long id, @RequestParam Long utenteId) {
-
-        /**
-         * @PathVariable
-         * Recupera l'id del cliente dall'URL.
-         *
-         * @RequestParam
-         * Recupera l'id dell'utente dalla query dell'URL.
-         */
-
-        // Il Service chiama il DAO per eliminare il cliente dal database.
+    public void deleteCliente(@PathVariable Long id, Authentication authentication) {
+        Long utenteId = (Long) authentication.getPrincipal();
         clienteService.deleteCliente(id, utenteId);
     }
 
     /**
      * ===============================
-     * OTTENERE TUTTI I CLIENTI DEL DATABASE
+     * OTTENERE TUTTI I CLIENTI DEL DATABASE (PERICOLO!)
      * ===============================
+     * Questo endpoint restituiva i clienti di TUTTI.
+     * In un sistema multi-utente è un gravissimo Data Leak.
+     * Commentato per sicurezza.
      */
+    /*
     @GetMapping("/all")
-    private List<Cliente> getAllClienti() {
+    private List<Cliente> getAllClientiDb() {
         return clienteService.getAllClientiDb();
     }
+    */
 }

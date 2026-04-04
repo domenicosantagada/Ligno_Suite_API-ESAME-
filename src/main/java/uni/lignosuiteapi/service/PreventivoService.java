@@ -1,6 +1,5 @@
 package uni.lignosuiteapi.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -15,11 +14,14 @@ import java.util.List;
 @Service
 public class PreventivoService {
 
-    @Autowired
-    private PreventivoRepository preventivoRepository;
+    private final PreventivoRepository preventivoRepository;
+    private final UtenteRepository utenteRepository;
 
-    @Autowired
-    private UtenteRepository utenteRepository; // Ci serve per associare l'utente!
+    // CONSTRUCTOR INJECTION
+    public PreventivoService(PreventivoRepository preventivoRepository, UtenteRepository utenteRepository) {
+        this.preventivoRepository = preventivoRepository;
+        this.utenteRepository = utenteRepository;
+    }
 
     private boolean existsInvoiceNumber(Long utenteId, Long invoiceNumber) {
         // Usa la query super veloce del repository

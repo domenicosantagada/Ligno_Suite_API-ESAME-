@@ -1,6 +1,5 @@
 package uni.lignosuiteapi.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,19 +13,24 @@ import java.util.List;
 @Service
 public class ArticoloService {
 
-    @Autowired
-    private ArticoloRepository articoloRepository; // Nome corretto della variabile
+    private final ArticoloRepository articoloRepository;
+    private final UtenteRepository utenteRepository;
 
-    @Autowired
-    private UtenteRepository utenteRepository; // Ci serve per recuperare l'utente prima di salvare!
+    // CONSTRUCTOR INJECTION
+    public ArticoloService(ArticoloRepository articoloRepository, UtenteRepository utenteRepository) {
+        this.articoloRepository = articoloRepository;
+        this.utenteRepository = utenteRepository;
+    }
 
     // Metodo per ottenere tutti gli articoli di un utente.
     public List<Articolo> getArticoliByUtenteId(Long utenteId) {
+
         return articoloRepository.findByUtenteId(utenteId);
     }
 
     // Metodo per ottenere tutti gli articoli.
     public List<Articolo> getAllArticoli() {
+
         return articoloRepository.findAll();
     }
 
@@ -43,13 +47,17 @@ public class ArticoloService {
         return articoloRepository.save(articolo);
     }
 
-    // Metodo per aggiornare un articolo esistente.
-    public Articolo updateArticolo(Long id, Articolo dettagli) {
-        // In JPA findById restituisce un Optional, ecco come gestirlo in modo pulito in una sola riga:
+    // Metodo per aggiornare un articolo esistente (Aggiunto utenteId)
+    public Articolo updateArticolo(Long id, Articolo dettagli, Long utenteId) {
         Articolo articoloEsistente = articoloRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Articolo non trovato"));
 
-        // Aggiorniamo i campi desiderati (Logica di Business)
+        // CONTROLLO SICUREZZA (IDOR): Verifichiamo che l'articolo appartenga a chi lo vuole modificare
+        if (!articoloEsistente.getUtente().getId().equals(utenteId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato. L'articolo non ti appartiene.");
+        }
+
+        // Aggiorniamo i campi
         articoloEsistente.setNome(dettagli.getNome());
         articoloEsistente.setDescrizione(dettagli.getDescrizione());
         articoloEsistente.setPrezzoAcquisto(dettagli.getPrezzoAcquisto());
@@ -57,16 +65,20 @@ public class ArticoloService {
         articoloEsistente.setDataAcquisto(dettagli.getDataAcquisto());
         articoloEsistente.setUnitaMisura(dettagli.getUnitaMisura());
 
-        // Al posto di .update() usiamo .save()
-        // Hibernate sa già che l'articolo ha un ID, quindi farà automaticamente una UPDATE
         return articoloRepository.save(articoloEsistente);
     }
 
-    // Metodo per eliminare un articolo.
-    public void deleteArticolo(Long id) {
-        if (!articoloRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Articolo non trovato");
+    // Metodo per eliminare un articolo (Aggiunto utenteId e controllo sicurezza)
+    public void deleteArticolo(Long id, Long utenteId) {
+        Articolo articoloEsistente = articoloRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Articolo non trovato"));
+
+        // CONTROLLO SICUREZZA (IDOR): Verifichiamo che l'articolo appartenga a chi lo vuole eliminare
+        if (!articoloEsistente.getUtente().getId().equals(utenteId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato. L'articolo non ti appartiene.");
         }
-        articoloRepository.deleteById(id);
+
+        // Usiamo delete() passando l'entità anziché deleteById()
+        articoloRepository.delete(articoloEsistente);
     }
 }

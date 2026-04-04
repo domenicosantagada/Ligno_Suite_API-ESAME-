@@ -1,103 +1,76 @@
 package uni.lignosuiteapi.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import uni.lignosuiteapi.model.Articolo;
 import uni.lignosuiteapi.service.ArticoloService;
 
 import java.util.List;
 
-
 /**
- * Controller per la gestione degli articoli.
+ * Controller REST per la gestione degli articoli (Prezzario).
  */
-
 @RestController
 @RequestMapping("/api/articoli")
-@CrossOrigin(origins = {"http://localhost:4200", "http://localhost"})
+// RIMOSSO @CrossOrigin: ora è gestito globalmente da SecurityConfig!
 public class ArticoloController {
 
-    // @Autowired: Inietta l'istanza del repository per interagire con il database senza dover scrivere query SQL manuali.
-    @Autowired
-    private ArticoloService articoloService;
+    private final ArticoloService articoloService;
 
+    // CONSTRUCTOR INJECTION: Sostituisce @Autowired.
+    public ArticoloController(ArticoloService articoloService) {
+        this.articoloService = articoloService;
+    }
 
     /**
-     * Metodo HTTP GET per recuperare tutti gli articoli creati da un utente specifico.
-     *
-     * @param utenteId: ID dell'utente che ha creato l'articolo.
-     * @return: Restituisce tutti gli articoli creati da un utente specifico.
+     * Recupera tutti gli articoli dell'utente loggato.
+     * N.B: Abbiamo rimosso "/utente/{utenteId}" dal path. Ora basta chiamare GET /api/articoli
      */
-    @GetMapping("/utente/{utenteId}")
-    public List<Articolo> getArticoliByUtenteId(@PathVariable Long utenteId) {
-
-        /**
-         * Il Service chiama il DAO per recuperare tutti gli articoli associati all'utente specificato.
-         */
+    @GetMapping
+    public List<Articolo> getArticoliPersonali(Authentication authentication) {
+        // Estraiamo l'ID utente in modo sicuro dal Token JWT
+        Long utenteId = (Long) authentication.getPrincipal();
         return articoloService.getArticoliByUtenteId(utenteId);
     }
 
     /**
-     * Metodo HTTP POST per creare un nuovo articolo associato a un utente specifico.
-     *
-     * @param utenteId: ID dell'utente che ha creato l'articolo.
-     * @param articolo: Dettagli del nuovo articolo da creare.
+     * Crea un nuovo articolo per l'utente loggato.
+     * N.B: Abbiamo rimosso "/utente/{utenteId}" dal path. Ora basta chiamare POST /api/articoli
      */
-    @PostMapping("/utente/{utenteId}")
-    public Articolo createArticolo(@PathVariable Long utenteId, @RequestBody Articolo articolo) {
-        /**
-         * @PathVariable utenteId: ID dell'utente che ha creato l'articolo.
-         * @RequestBody articolo: Dettagli del nuovo articolo da creare sotto forma di JSON nel corpo della richiesta.
-         *  http://localhost:8080/api/articoli/utente/2?
-         * {
-         *   "nome": "maniglia",
-         *   "prezzoAcquisto": 3.50,
-         *   "fornitore": "ferramenta rossi",
-         *   "unitaMisura": "pz",
-         *   "dataAcquisto": "2024-03-14"
-         * }
-         */
-        /**
-         * Il Service chiama il DAO per salvare il nuovo articolo associato all'utente specificato.
-         */
+    @PostMapping
+    public Articolo createArticolo(Authentication authentication, @RequestBody Articolo articolo) {
+        // Estraiamo l'ID utente in modo sicuro dal Token JWT
+        Long utenteId = (Long) authentication.getPrincipal();
         return articoloService.createArticolo(utenteId, articolo);
     }
 
     /**
-     * Metodo HTTP PUT per aggiornare i dettagli di un articolo esistente.
-     *
-     * @param id:       ID dell'articolo da aggiornare.
-     * @param dettagli: Nuovi dettagli dell'articolo.
-     * @return: Restituisce l'articolo aggiornato.
+     * Aggiorna un articolo esistente.
      */
     @PutMapping("/{id}")
-    public Articolo updateArticolo(@PathVariable Long id, @RequestBody Articolo dettagli) {
-
-        /**
-         * Il Service chiama il DAO per aggiornare i dettagli dell'articolo specificato.
-         */
-        return articoloService.updateArticolo(id, dettagli);
+    public Articolo updateArticolo(@PathVariable Long id, Authentication authentication, @RequestBody Articolo dettagli) {
+        Long utenteId = (Long) authentication.getPrincipal();
+        // NOTA: Passiamo anche l'utenteId al Service per assicurarci che l'utente stia
+        // modificando un SUO articolo e non quello di qualcun altro!
+        return articoloService.updateArticolo(id, dettagli, utenteId);
     }
 
     /**
-     * Metodo HTTP DELETE per eliminare un articolo specifico.
-     *
-     * @param id: ID dell'articolo da eliminare.
+     * Elimina un articolo specifico.
      */
     @DeleteMapping("/{id}")
-    public void deleteArticolo(@PathVariable Long id) {
-
-        /**
-         * Il Service chiama il DAO per eliminare l'articolo specificato.
-         */
-        articoloService.deleteArticolo(id);
+    public void deleteArticolo(@PathVariable Long id, Authentication authentication) {
+        Long utenteId = (Long) authentication.getPrincipal();
+        // NOTA: Passiamo anche l'utenteId al Service per assicurarci che l'utente stia
+        // eliminando un SUO articolo e non quello di qualcun altro!
+        articoloService.deleteArticolo(id, utenteId);
     }
 
     /**
-     * Metodo Get per recuperare tutti gli articoli.
+     * ATTENZIONE: Metodo utilizzato solo in fase di debug per testare le chiamate api
+     * Non espsoto nel frontend
+     @GetMapping("/all") public List<Articolo> getAllArticoli() {
+     return articoloService.getAllArticoli();
+     }
      */
-    @GetMapping("/all")
-    public List<Articolo> getAllArticoli() {
-        return articoloService.getAllArticoli();
-    }
 }

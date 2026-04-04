@@ -1,6 +1,5 @@
 package uni.lignosuiteapi.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -14,15 +13,21 @@ import java.util.List;
 @Service
 public class ClienteService {
 
-    @Autowired
-    private ClienteRepository clienteRepository;
+    private final ClienteRepository clienteRepository;
+    private final UtenteRepository utenteRepository;
 
-    @Autowired
-    private UtenteRepository utenteRepository; // Serve per associare il cliente all'utente
+    // CONSTRUCTOR INJECTION: Sostituisce gli @Autowired
+    public ClienteService(ClienteRepository clienteRepository, UtenteRepository utenteRepository) {
+        this.clienteRepository = clienteRepository;
+        this.utenteRepository = utenteRepository;
+    }
 
+    /*
+    // METODO PERICOLOSO: Commentato perché disabilitato nel Controller
     public List<Cliente> getAllClientiDb() {
         return clienteRepository.findAll();
     }
+    */
 
     public List<Cliente> getAllClienti(Long utenteId) {
         return clienteRepository.findByUtenteId(utenteId);
