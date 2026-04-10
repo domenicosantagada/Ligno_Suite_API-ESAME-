@@ -112,4 +112,13 @@ public class PreventivoService {
         }
         preventivoRepository.delete(esistente);
     }
+
+    public Long getNextInvoiceNumber(Long utenteId) {
+        // Recupera tutti i preventivi dell'utente e trova il numero fattura più alto
+        return preventivoRepository.findByUtenteId(utenteId).stream()
+                .map(Preventivo::getInvoiceNumber)
+                .filter(java.util.Objects::nonNull)
+                .max(Long::compareTo)
+                .orElse(0L) + 1L;
+    }
 }

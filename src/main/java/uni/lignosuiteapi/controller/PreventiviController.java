@@ -49,4 +49,10 @@ public class PreventiviController {
         Long utenteId = (Long) authentication.getPrincipal();
         preventivoService.deletePreventivo(id, utenteId);
     }
+
+    @GetMapping("/next-number")
+    public Long getNextNumber(Authentication authentication) {
+        Long utenteId = (Long) authentication.getPrincipal();
+        return preventivoService.getNextInvoiceNumber(utenteId);
+    }
 }
