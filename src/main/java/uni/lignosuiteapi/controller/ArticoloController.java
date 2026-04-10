@@ -2,7 +2,7 @@ package uni.lignosuiteapi.controller;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import uni.lignosuiteapi.model.Articolo;
+import uni.lignosuiteapi.dto.ArticoloDTO;
 import uni.lignosuiteapi.service.ArticoloService;
 
 import java.util.List;
@@ -27,7 +27,7 @@ public class ArticoloController {
      * N.B: Abbiamo rimosso "/utente/{utenteId}" dal path. Ora basta chiamare GET /api/articoli
      */
     @GetMapping
-    public List<Articolo> getArticoliPersonali(Authentication authentication) {
+    public List<ArticoloDTO> getArticoliPersonali(Authentication authentication) {
         // Estraiamo l'ID utente in modo sicuro dal Token JWT
         Long utenteId = (Long) authentication.getPrincipal();
         return articoloService.getArticoliByUtenteId(utenteId);
@@ -38,17 +38,17 @@ public class ArticoloController {
      * N.B: Abbiamo rimosso "/utente/{utenteId}" dal path. Ora basta chiamare POST /api/articoli
      */
     @PostMapping
-    public Articolo createArticolo(Authentication authentication, @RequestBody Articolo articolo) {
+    public ArticoloDTO createArticolo(Authentication authentication, @RequestBody ArticoloDTO articoloDTO) {
         // Estraiamo l'ID utente in modo sicuro dal Token JWT
         Long utenteId = (Long) authentication.getPrincipal();
-        return articoloService.createArticolo(utenteId, articolo);
+        return articoloService.createArticolo(utenteId, articoloDTO);
     }
 
     /**
      * Aggiorna un articolo esistente.
      */
     @PutMapping("/{id}")
-    public Articolo updateArticolo(@PathVariable Long id, Authentication authentication, @RequestBody Articolo dettagli) {
+    public ArticoloDTO updateArticolo(@PathVariable Long id, Authentication authentication, @RequestBody ArticoloDTO dettagli) {
         Long utenteId = (Long) authentication.getPrincipal();
         // NOTA: Passiamo anche l'utenteId al Service per assicurarci che l'utente stia
         // modificando un SUO articolo e non quello di qualcun altro!
@@ -68,9 +68,12 @@ public class ArticoloController {
 
     /**
      * ATTENZIONE: Metodo utilizzato solo in fase di debug per testare le chiamate api
-     * Non espsoto nel frontend
-     @GetMapping("/all") public List<Articolo> getAllArticoli() {
-     return articoloService.getAllArticoli();
+     * Non esposto nel frontend
+     */
+    /*
+     @GetMapping("/all")
+     public List<ArticoloDTO> getAllArticoli() {
+        return articoloService.getAllArticoli();
      }
      */
 }
