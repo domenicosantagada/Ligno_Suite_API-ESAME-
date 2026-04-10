@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public class AiController {
     }
 
     @PostMapping("/genera-descrizione")
-    public Map<String, String> generaDescrizione(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Map<String, String>> generaDescrizione(@RequestBody Map<String, String> request) {
         String inputTesto = request.get("testo");
 
         String url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiApiKey;
@@ -63,13 +64,20 @@ public class AiController {
 
             Map<String, String> result = new HashMap<>();
             result.put("descrizioneMigliorata", testoGenerato.trim());
-            return result;
+
+            return ResponseEntity.ok(result);
+
+        } catch (HttpServerErrorException.ServiceUnavailable e) {
+            // Se Google è sovraccarico, restituiamo un errore 503 formattato in JSON
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "I server dell'Intelligenza Artificiale sono momentaneamente sovraccarichi. Riprova tra un minuto!");
+            return ResponseEntity.status(503).body(errorResponse);
 
         } catch (Exception e) {
-            e.printStackTrace();
-            Map<String, String> errorResult = new HashMap<>();
-            errorResult.put("descrizioneMigliorata", "Errore nella generazione: " + inputTesto + " (Realizzazione artigianale su misura)");
-            return errorResult;
+            // Per altri errori, restituiamo un 500 generico formattato in JSON
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Errore durante la generazione AI: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 }

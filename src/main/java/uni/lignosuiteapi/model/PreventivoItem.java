@@ -29,7 +29,7 @@ public class PreventivoItem {
     @JsonIgnore // FONDAMENTALE! Senza questo, andresti in Loop Infinito (StackOverflow) durante le chiamate API!
     private Preventivo preventivo;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT") // Permette descrizioni più lunghe
     private String description;
 
     @Column(nullable = false)
