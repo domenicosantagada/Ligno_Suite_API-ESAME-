@@ -2,7 +2,7 @@ package uni.lignosuiteapi.controller;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import uni.lignosuiteapi.model.Cliente;
+import uni.lignosuiteapi.dto.ClienteDTO;
 import uni.lignosuiteapi.service.ClienteService;
 
 import java.util.List;
@@ -27,7 +27,7 @@ public class ClienteController {
      * =========================
      */
     @GetMapping
-    public List<Cliente> getAllClienti(Authentication authentication) {
+    public List<ClienteDTO> getAllClienti(Authentication authentication) {
         // Estraiamo l'ID utente in modo sicuro dal Token JWT
         Long utenteId = (Long) authentication.getPrincipal();
         return clienteService.getAllClienti(utenteId);
@@ -39,9 +39,9 @@ public class ClienteController {
      * =========================
      */
     @PostMapping
-    public Cliente createCliente(Authentication authentication, @RequestBody Cliente cliente) {
+    public ClienteDTO createCliente(Authentication authentication, @RequestBody ClienteDTO clienteDTO) {
         Long utenteId = (Long) authentication.getPrincipal();
-        return clienteService.createCliente(utenteId, cliente);
+        return clienteService.createCliente(utenteId, clienteDTO);
     }
 
     /**
@@ -50,9 +50,9 @@ public class ClienteController {
      * =========================
      */
     @PutMapping("/{id}")
-    public Cliente updateCliente(@PathVariable Long id, Authentication authentication, @RequestBody Cliente cliente) {
+    public ClienteDTO updateCliente(@PathVariable Long id, Authentication authentication, @RequestBody ClienteDTO clienteDTO) {
         Long utenteId = (Long) authentication.getPrincipal();
-        return clienteService.updateCliente(id, cliente, utenteId);
+        return clienteService.updateCliente(id, clienteDTO, utenteId);
     }
 
     /**
@@ -76,7 +76,7 @@ public class ClienteController {
      */
     /*
     @GetMapping("/all")
-    private List<Cliente> getAllClientiDb() {
+    private List<ClienteDTO> getAllClientiDb() {
         return clienteService.getAllClientiDb();
     }
     */
