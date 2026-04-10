@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -65,11 +66,12 @@ public class AiController {
             result.put("descrizioneMigliorata", testoGenerato.trim());
             return result;
 
+        } catch (HttpServerErrorException.ServiceUnavailable e) {
+            // Se Google è sovraccarico
+            return (Map<String, String>) ResponseEntity.status(503).body("I server dell'Intelligenza Artificiale sono momentaneamente sovraccarichi. Riprova tra un minuto!");
         } catch (Exception e) {
-            e.printStackTrace();
-            Map<String, String> errorResult = new HashMap<>();
-            errorResult.put("descrizioneMigliorata", "Errore nella generazione: " + inputTesto + " (Realizzazione artigianale su misura)");
-            return errorResult;
+            // Per altri errori
+            return (Map<String, String>) ResponseEntity.status(500).body("Errore durante la generazione AI: " + e.getMessage());
         }
     }
 }
