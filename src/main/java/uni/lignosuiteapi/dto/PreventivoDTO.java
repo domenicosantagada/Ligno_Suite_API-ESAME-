@@ -6,7 +6,7 @@ import java.util.List;
 public class PreventivoDTO {
     public Long id;
     public LocalDate date;
-    public String invoiceNumber;
+    public Long invoiceNumber;
     public String fromName;
     public String fromPiva;
     public String fromEmail;
