@@ -3,6 +3,10 @@ package uni.lignosuiteapi.service;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import uni.lignosuiteapi.dto.PreventivoDTO;
+import uni.lignosuiteapi.dto.PreventivoItemDTO;
+import uni.lignosuiteapi.dto.PreventivoListDTO;
+import uni.lignosuiteapi.dto.mapper.PreventivoMapper;
 import uni.lignosuiteapi.model.Preventivo;
 import uni.lignosuiteapi.model.PreventivoItem;
 import uni.lignosuiteapi.model.Utente;
@@ -10,109 +14,102 @@ import uni.lignosuiteapi.repository.PreventivoRepository;
 import uni.lignosuiteapi.repository.UtenteRepository;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PreventivoService {
 
     private final PreventivoRepository preventivoRepository;
     private final UtenteRepository utenteRepository;
+    private final PreventivoMapper preventivoMapper; // Iniettiamo il Mapper
 
-    // CONSTRUCTOR INJECTION
-    public PreventivoService(PreventivoRepository preventivoRepository, UtenteRepository utenteRepository) {
+    public PreventivoService(PreventivoRepository preventivoRepository, UtenteRepository utenteRepository, PreventivoMapper preventivoMapper) {
         this.preventivoRepository = preventivoRepository;
         this.utenteRepository = utenteRepository;
+        this.preventivoMapper = preventivoMapper;
     }
 
-    private boolean existsInvoiceNumber(Long utenteId, Long invoiceNumber) {
-        // Usa la query super veloce del repository
-        return preventivoRepository.existsByUtenteIdAndInvoiceNumber(utenteId, invoiceNumber);
+    // MODIFICA: Restituisce la versione super-leggera
+    public List<PreventivoListDTO> getAllPreventivi(Long utenteId) {
+        return preventivoRepository.findByUtenteId(utenteId).stream()
+                .map(preventivoMapper::toListDTO)
+                .collect(Collectors.toList());
     }
 
-    public List<Preventivo> getAllPreventivi(Long utenteId) {
-        return preventivoRepository.findByUtenteId(utenteId);
+    // MODIFICA: Restituisce il DTO completo quando se ne apre uno specifico
+    public PreventivoDTO getPreventivoById(Long id, Long utenteId) {
+        Preventivo preventivo = preventivoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Preventivo non trovato"));
+
+        if (!preventivo.getUtente().getId().equals(utenteId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
+        }
+        return preventivoMapper.toDTO(preventivo);
     }
 
-    // Passiamo l'utenteId dal controller per sicurezza e architettura
-    public Preventivo createPreventivo(Long utenteId, Preventivo preventivo) {
+    public PreventivoDTO createPreventivo(Long utenteId, PreventivoDTO preventivoDTO) {
         Utente utente = utenteRepository.findById(utenteId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente non trovato"));
 
-        if (existsInvoiceNumber(utenteId, preventivo.getInvoiceNumber())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Numero preventivo già in uso.");
-        }
-
+        Preventivo preventivo = preventivoMapper.toEntity(preventivoDTO);
         preventivo.setUtente(utente);
 
-        // Fondamentale: per ogni item, dobbiamo dire che appartiene a questo preventivo
+        // PASSAGGIO FONDAMENTALE: Riagganciamo il Padre ai Figli generati dal Mapper
         if (preventivo.getItems() != null) {
             for (PreventivoItem item : preventivo.getItems()) {
                 item.setPreventivo(preventivo);
             }
         }
 
-        // Salva il Preventivo e in automatico salva anche tutti gli Item nella tabella preventivo_item!
-        return preventivoRepository.save(preventivo);
+        Preventivo salvato = preventivoRepository.save(preventivo);
+        return preventivoMapper.toDTO(salvato);
     }
 
-    public Preventivo updatePreventivo(Long id, Preventivo datiAggiornati, Long utenteId) {
-        Preventivo preventivoEsistente = preventivoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Preventivo non trovato."));
+    public PreventivoDTO updatePreventivo(Long id, PreventivoDTO datiAggiornati, Long utenteId) {
+        Preventivo esistente = preventivoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Preventivo non trovato"));
 
-        // Controllo permessi
-        if (!preventivoEsistente.getUtente().getId().equals(utenteId)) {
+        if (!esistente.getUtente().getId().equals(utenteId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
         }
 
-        if (!preventivoEsistente.getInvoiceNumber().equals(datiAggiornati.getInvoiceNumber()) &&
-                existsInvoiceNumber(utenteId, datiAggiornati.getInvoiceNumber())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Numero preventivo già in uso.");
-        }
+        // Travaso Dati principali
+        esistente.setDate(datiAggiornati.date);
+        esistente.setInvoiceNumber(datiAggiornati.invoiceNumber);
+        esistente.setFromName(datiAggiornati.fromName);
+        esistente.setFromPiva(datiAggiornati.fromPiva);
+        esistente.setFromEmail(datiAggiornati.fromEmail);
+        esistente.setToName(datiAggiornati.toName);
+        esistente.setToPiva(datiAggiornati.toPiva);
+        esistente.setToEmail(datiAggiornati.toEmail);
+        esistente.setSubtotal(datiAggiornati.subtotal);
+        esistente.setTaxRate(datiAggiornati.taxRate);
+        esistente.setTaxAmount(datiAggiornati.taxAmount);
+        esistente.setDiscount(datiAggiornati.discount);
+        esistente.setTotal(datiAggiornati.total);
 
-        // Travaso Dati anagrafici e totali
-        preventivoEsistente.setInvoiceNumber(datiAggiornati.getInvoiceNumber());
-        preventivoEsistente.setDate(datiAggiornati.getDate());
-        preventivoEsistente.setFromName(datiAggiornati.getFromName());
-        preventivoEsistente.setFromEmail(datiAggiornati.getFromEmail());
-        preventivoEsistente.setFromPiva(datiAggiornati.getFromPiva());
-        preventivoEsistente.setToName(datiAggiornati.getToName());
-        preventivoEsistente.setToEmail(datiAggiornati.getToEmail());
-        preventivoEsistente.setToPiva(datiAggiornati.getToPiva());
-        preventivoEsistente.setTaxRate(datiAggiornati.getTaxRate());
-        preventivoEsistente.setSubtotal(datiAggiornati.getSubtotal());
-        preventivoEsistente.setTaxAmount(datiAggiornati.getTaxAmount());
-        preventivoEsistente.setDiscount(datiAggiornati.getDiscount());
-        preventivoEsistente.setTotal(datiAggiornati.getTotal());
+        // GESTIONE LISTA FIGLI (Svuotiamo e Riempiamo)
+        esistente.getItems().clear(); // Rimuove le vecchie righe dal DB (orphanRemoval)
 
-        // Travaso degli Items! Grazie a orphanRemoval=true, Spring farà da solo la comparazione
-        // per capire quali item vanno aggiornati, quali inseriti e quali cancellati.
-        preventivoEsistente.getItems().clear(); // Svuota i vecchi
-        if (datiAggiornati.getItems() != null) {
-            for (PreventivoItem item : datiAggiornati.getItems()) {
-                item.setPreventivo(preventivoEsistente); // Riassocia il nuovo item
-                preventivoEsistente.getItems().add(item);
+        if (datiAggiornati.items != null) {
+            for (PreventivoItemDTO itemDTO : datiAggiornati.items) {
+                PreventivoItem newItem = preventivoMapper.itemToEntity(itemDTO);
+                newItem.setPreventivo(esistente); // Collega il nuovo figlio al padre
+                esistente.getItems().add(newItem);
             }
         }
 
-        return preventivoRepository.save(preventivoEsistente);
+        Preventivo aggiornato = preventivoRepository.save(esistente);
+        return preventivoMapper.toDTO(aggiornato);
     }
 
     public void deletePreventivo(Long id, Long utenteId) {
-        Preventivo preventivoEsistente = preventivoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Preventivo non trovato."));
+        Preventivo esistente = preventivoRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Preventivo non trovato"));
 
-        if (!preventivoEsistente.getUtente().getId().equals(utenteId)) {
+        if (!esistente.getUtente().getId().equals(utenteId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
         }
-
-        // Questo cancellerà in automatico dal DB anche tutti i PreventivoItem collegati!
-        preventivoRepository.delete(preventivoEsistente);
-    }
-
-    public Long getNextInvoiceNumber(Long utenteId) {
-        return preventivoRepository.getNextInvoiceNumber(utenteId);
-    }
-
-    public List<Preventivo> getPreventiviPerCliente(String email) {
-        return preventivoRepository.findByToEmail(email);
+        preventivoRepository.delete(esistente);
     }
 }
