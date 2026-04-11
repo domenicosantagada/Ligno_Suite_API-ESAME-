@@ -1,6 +1,18 @@
 package uni.lignosuiteapi.service;
 
+import it.unical.mat.embasp.languages.asp.ASPInputProgram;
+import it.unical.mat.embasp.languages.asp.ASPMapper;
+import it.unical.mat.embasp.languages.asp.AnswerSet;
+import it.unical.mat.embasp.languages.asp.AnswerSets;
+import it.unical.mat.embasp.platforms.desktop.DesktopHandler;
+import it.unical.mat.embasp.specializations.dlv2.desktop.DLV2DesktopService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import uni.lignosuiteapi.asp.model.LamaIn;
+import uni.lignosuiteapi.asp.model.PezzoIn;
+import uni.lignosuiteapi.asp.model.PosizionatoOut;
+import uni.lignosuiteapi.asp.model.ScartoIn;
 import uni.lignosuiteapi.dto.*;
 
 import java.util.ArrayList;
@@ -12,10 +24,30 @@ import java.util.stream.Collectors;
 @Service
 public class OttimizzazioneService {
 
+    // Aggiunto il Logger di Spring Boot per rimuovere il warning del printStackTrace
+    private static final Logger logger = LoggerFactory.getLogger(OttimizzazioneService.class);
+
+    // MODIFICA QUI IL PERCORSO SE USI WINDOWS (es. "lib/dlv2.exe") O LINUX
+    private static final String DLV_PATH = "lib/dlv-2.1.1-macos";
+    private static final String ENCODING_PATH = "src/main/resources/taglio.dl";
+
+    public OttimizzazioneService() {
+        // Registrazione delle classi per embASP al momento dell'avvio del servizio
+        try {
+            ASPMapper.getInstance().registerClass(PezzoIn.class);
+            ASPMapper.getInstance().registerClass(ScartoIn.class);
+            ASPMapper.getInstance().registerClass(LamaIn.class);
+            ASPMapper.getInstance().registerClass(PosizionatoOut.class);
+            logger.info("Configurazione embASP completata con successo.");
+        } catch (Exception e) {
+            // Gestione corretta delle eccezioni di Reflection sollevate da embASP
+            logger.error("Errore durante la registrazione delle classi ASPMapper: ", e);
+        }
+    }
+
     public RisultatoOttimizzazioneDTO ottimizzaTaglio(PannelloRequestDTO request) {
         List<PezzoDTO> espansi = new ArrayList<>();
 
-        // 1. Espande i pezzi in base alla quantità
         for (int idx = 0; idx < request.pezzi.size(); idx++) {
             PezzoDTO p = request.pezzi.get(idx);
             for (int q = 0; q < p.quantita; q++) {
@@ -31,21 +63,15 @@ public class OttimizzazioneService {
             }
         }
 
-        // 2. Strategie di ordinamento (Esattamente come in Angular)
         List<Comparator<PezzoDTO>> strategieOrdinamento = Arrays.asList(
-                // Area decrescente
                 (a, b) -> Double.compare(b.larghezza * b.altezza, a.larghezza * a.altezza),
-                // Lato più lungo
                 (a, b) -> Double.compare(Math.max(b.larghezza, b.altezza), Math.max(a.larghezza, a.altezza)),
-                // Perimetro decrescente
                 (a, b) -> Double.compare((b.larghezza + b.altezza), (a.larghezza + a.altezza))
         );
 
         RisultatoOttimizzazioneDTO migliorRisultato = null;
 
-        // 3. Testiamo le 3 euristiche in parallelo e teniamo la migliore
         for (Comparator<PezzoDTO> strategia : strategieOrdinamento) {
-            // Dobbiamo clonare la lista perché l'algoritmo modifica lo stato (x, y, posizionato)
             List<PezzoDTO> pezziCorrenti = clonaLista(espansi);
             pezziCorrenti.sort(strategia);
 
@@ -67,141 +93,30 @@ public class OttimizzazioneService {
         return migliorRisultato;
     }
 
-    // Utility per la clonazione profonda dei pezzi
-    private List<PezzoDTO> clonaLista(List<PezzoDTO> originali) {
-        return originali.stream().map(p -> {
-            PezzoDTO c = new PezzoDTO();
-            c.id = p.id;
-            c.nome = p.nome;
-            c.larghezza = p.larghezza;
-            c.altezza = p.altezza;
-            c.quantita = p.quantita;
-            c.puoRuotare = p.puoRuotare;
-            c.indiceColore = p.indiceColore;
-            return c;
-        }).collect(Collectors.toList());
-    }
-
-    // =========================================================================
-    // MOTORE MULTI-PANNELLO E SPLIT DINAMICO (Esatto porting da TypeScript)
-    // =========================================================================
-
     private RisultatoOttimizzazioneDTO eseguiSingolaOttimizzazione(double pw, double ph, double spessoreLama, double margine, List<PezzoDTO> listaPezzi) {
-
         List<PannelloAperto> pannelliAperti = new ArrayList<>();
+        DesktopHandler handler = new DesktopHandler(new DLV2DesktopService(DLV_PATH));
 
         if (!listaPezzi.isEmpty()) {
             pannelliAperti.add(new PannelloAperto(pw, ph, margine));
         }
 
         for (PezzoDTO pezzo : listaPezzi) {
-            ScartoDTO migliorSpazio = null;
-            PannelloAperto pannelloMigliore = null;
-            boolean rotazioneMigliore = false;
-            double migliorAreaResidua = Double.MAX_VALUE;
-            double migliorLatoCorto = Double.MAX_VALUE;
-            int indiceSpazioMigliore = -1;
+            boolean posizionato = tentaPosizionamentoConASP(pezzo, pannelliAperti, handler, spessoreLama);
 
-            // 1. ESPLORAZIONE GLOBALE (Tightest Fit su tutti i pannelli)
-            for (PannelloAperto pannello : pannelliAperti) {
-                for (int i = 0; i < pannello.spaziLiberi.size(); i++) {
-                    ScartoDTO spazio = pannello.spaziLiberi.get(i);
-
-                    // Prova dritto
-                    if (pezzo.larghezza <= spazio.w && pezzo.altezza <= spazio.h) {
-                        double area = (spazio.w * spazio.h) - (pezzo.larghezza * pezzo.altezza);
-                        double latoCorto = Math.min(spazio.w - pezzo.larghezza, spazio.h - pezzo.altezza);
-
-                        if (migliorSpazio == null || area < migliorAreaResidua || (area == migliorAreaResidua && latoCorto < migliorLatoCorto)) {
-                            migliorAreaResidua = area;
-                            migliorLatoCorto = latoCorto;
-                            migliorSpazio = spazio;
-                            pannelloMigliore = pannello;
-                            rotazioneMigliore = false;
-                            indiceSpazioMigliore = i;
-                        }
-                    }
-
-                    // Prova ruotato
-                    if (pezzo.puoRuotare && pezzo.altezza <= spazio.w && pezzo.larghezza <= spazio.h) {
-                        double area = (spazio.w * spazio.h) - (pezzo.altezza * pezzo.larghezza);
-                        double latoCorto = Math.min(spazio.w - pezzo.altezza, spazio.h - pezzo.larghezza);
-
-                        if (migliorSpazio == null || area < migliorAreaResidua || (area == migliorAreaResidua && latoCorto < migliorLatoCorto)) {
-                            migliorAreaResidua = area;
-                            migliorLatoCorto = latoCorto;
-                            migliorSpazio = spazio;
-                            pannelloMigliore = pannello;
-                            rotazioneMigliore = true;
-                            indiceSpazioMigliore = i;
-                        }
-                    }
-                }
-            }
-
-            // 2. SE NON ENTRA, APRIAMO UN NUOVO PANNELLO
-            if (migliorSpazio == null) {
+            if (!posizionato) {
                 PannelloAperto nuovoPannello = new PannelloAperto(pw, ph, margine);
                 pannelliAperti.add(nuovoPannello);
-                ScartoDTO spazio = nuovoPannello.spaziLiberi.get(0);
 
-                boolean entraDritto = pezzo.larghezza <= spazio.w && pezzo.altezza <= spazio.h;
-                boolean entraRuotato = pezzo.puoRuotare && pezzo.altezza <= spazio.w && pezzo.larghezza <= spazio.h;
-                if (!entraDritto && !entraRuotato) {
+                boolean posizionatoNuovo = tentaPosizionamentoConASP(pezzo, pannelliAperti, handler, spessoreLama);
+
+                if (!posizionatoNuovo) {
                     pezzo.posizionato = false;
                     nuovoPannello.nonPosizionabili.add(pezzo);
-                    continue; // Salta al prossimo pezzo
-                }
-
-                pannelloMigliore = nuovoPannello;
-                migliorSpazio = spazio;
-                indiceSpazioMigliore = 0;
-
-                // Calcolo orientamento ideale nel nuovo pannello vuoto
-                if (entraDritto && entraRuotato) {
-                    double areaD = (spazio.w * spazio.h) - (pezzo.larghezza * pezzo.altezza);
-                    double lcD = Math.min(spazio.w - pezzo.larghezza, spazio.h - pezzo.altezza);
-                    double areaR = (spazio.w * spazio.h) - (pezzo.altezza * pezzo.larghezza);
-                    double lcR = Math.min(spazio.w - pezzo.altezza, spazio.h - pezzo.larghezza);
-                    rotazioneMigliore = (areaR < areaD || (areaR == areaD && lcR < lcD));
-                } else {
-                    rotazioneMigliore = !entraDritto;
                 }
             }
-
-            // 3. ESECUZIONE TAGLIO
-            double larghezzaT = rotazioneMigliore ? pezzo.altezza : pezzo.larghezza;
-            double altezzaT = rotazioneMigliore ? pezzo.larghezza : pezzo.altezza;
-
-            pezzo.x = migliorSpazio.x;
-            pezzo.y = migliorSpazio.y;
-            pezzo.larghezzaTaglio = larghezzaT;
-            pezzo.altezzaTaglio = altezzaT;
-            pezzo.ruotato = rotazioneMigliore;
-            pezzo.posizionato = true;
-
-            pannelloMigliore.pezzi.add(pezzo);
-
-            // --- SPLIT DINAMICO (Shorter Axis Rule) ---
-            double wDestra = migliorSpazio.w - larghezzaT - spessoreLama;
-            double hSopra = migliorSpazio.h - altezzaT - spessoreLama;
-
-            if (wDestra >= hSopra) {
-                if (wDestra > 0)
-                    pannelloMigliore.spaziLiberi.add(new ScartoDTO(migliorSpazio.x + larghezzaT + spessoreLama, migliorSpazio.y, wDestra, migliorSpazio.h));
-                if (hSopra > 0)
-                    pannelloMigliore.spaziLiberi.add(new ScartoDTO(migliorSpazio.x, migliorSpazio.y + altezzaT + spessoreLama, larghezzaT, hSopra));
-            } else {
-                if (wDestra > 0)
-                    pannelloMigliore.spaziLiberi.add(new ScartoDTO(migliorSpazio.x + larghezzaT + spessoreLama, migliorSpazio.y, wDestra, altezzaT));
-                if (hSopra > 0)
-                    pannelloMigliore.spaziLiberi.add(new ScartoDTO(migliorSpazio.x, migliorSpazio.y + altezzaT + spessoreLama, migliorSpazio.w, hSopra));
-            }
-
-            pannelloMigliore.spaziLiberi.remove(indiceSpazioMigliore);
         }
 
-        // 4. FORMATTAZIONE DEL RISULTATO FINALE PER IL FRONTEND
         RisultatoOttimizzazioneDTO res = new RisultatoOttimizzazioneDTO();
         res.pannelli = new ArrayList<>();
         double areaUsata = 0;
@@ -213,8 +128,6 @@ public class OttimizzazioneService {
             rp.pannelloLarghezza = pw;
             rp.pannelloAltezza = ph;
             rp.pezzi = pa.pezzi;
-
-            // Pulizia degli scarti microscopici per non "sporcare" la UI
             rp.scarti = pa.spaziLiberi.stream().filter(s -> s.w > 20 && s.h > 20).collect(Collectors.toList());
             rp.nonPosizionabili = pa.nonPosizionabili;
             res.pannelli.add(rp);
@@ -230,6 +143,117 @@ public class OttimizzazioneService {
         res.areaScarto = areaTotalePannelli - areaUsata;
 
         return res;
+    }
+
+    private boolean tentaPosizionamentoConASP(PezzoDTO pezzo, List<PannelloAperto> pannelliAperti, DesktopHandler handler, double spessoreLama) {
+        ASPInputProgram inputProgram = new ASPInputProgram();
+        inputProgram.addFilesPath(ENCODING_PATH);
+
+        try {
+            inputProgram.addObjectInput(new PezzoIn(pezzo.id, (int) pezzo.larghezza, (int) pezzo.altezza, pezzo.puoRuotare ? 1 : 0));
+            inputProgram.addObjectInput(new LamaIn((int) spessoreLama));
+
+            int scartiValidiInviati = 0;
+            double latoMinimoPezzo = Math.min(pezzo.larghezza, pezzo.altezza);
+
+            for (int pIdx = 0; pIdx < pannelliAperti.size(); pIdx++) {
+                PannelloAperto pannello = pannelliAperti.get(pIdx);
+                for (int sIdx = 0; sIdx < pannello.spaziLiberi.size(); sIdx++) {
+                    ScartoDTO scarto = pannello.spaziLiberi.get(sIdx);
+                    if (scarto.w >= latoMinimoPezzo && scarto.h >= latoMinimoPezzo) {
+                        // FIX: Aggiunto cast (int) per rispettare la firma del costruttore ScartoIn
+                        inputProgram.addObjectInput(new ScartoIn(pIdx + "-" + sIdx, (int) scarto.w, (int) scarto.h));
+                        scartiValidiInviati++;
+                    }
+                }
+            }
+
+            if (scartiValidiInviati == 0) return false;
+
+            handler.addProgram(inputProgram);
+
+            AnswerSets answerSets = (AnswerSets) handler.startSync();
+            PosizionatoOut mossaMigliore = estraiMossaMigliore(answerSets);
+
+            if (mossaMigliore != null) {
+                applicaMossaFisica(mossaMigliore, pezzo, pannelliAperti, spessoreLama);
+                return true;
+            }
+
+        } catch (Exception e) {
+            // FIX: Sostituito printStackTrace con logger
+            logger.error("Errore durante l'esecuzione del solver ASP", e);
+        } finally {
+            handler.removeAll();
+        }
+        return false;
+    }
+
+    private void applicaMossaFisica(PosizionatoOut mossa, PezzoDTO pezzo, List<PannelloAperto> pannelliAperti, double spessoreLama) {
+        String[] indici = mossa.getIdScarto().split("-");
+        int pIdx = Integer.parseInt(indici[0]);
+        int sIdx = Integer.parseInt(indici[1]);
+
+        PannelloAperto pannelloMigliore = pannelliAperti.get(pIdx);
+        ScartoDTO migliorSpazio = pannelloMigliore.spaziLiberi.get(sIdx);
+
+        boolean rotazioneMigliore = mossa.isRuotato();
+        double larghezzaT = rotazioneMigliore ? pezzo.altezza : pezzo.larghezza;
+        double altezzaT = rotazioneMigliore ? pezzo.larghezza : pezzo.altezza;
+
+        pezzo.x = migliorSpazio.x;
+        pezzo.y = migliorSpazio.y;
+        pezzo.larghezzaTaglio = larghezzaT;
+        pezzo.altezzaTaglio = altezzaT;
+        pezzo.ruotato = rotazioneMigliore;
+        pezzo.posizionato = true;
+
+        pannelloMigliore.pezzi.add(pezzo);
+
+        double wDestra = migliorSpazio.w - larghezzaT - spessoreLama;
+        double hSopra = migliorSpazio.h - altezzaT - spessoreLama;
+
+        pannelloMigliore.spaziLiberi.remove(sIdx);
+
+        if (wDestra >= hSopra) {
+            if (wDestra > 0)
+                pannelloMigliore.spaziLiberi.add(new ScartoDTO(migliorSpazio.x + larghezzaT + spessoreLama, migliorSpazio.y, wDestra, migliorSpazio.h));
+            if (hSopra > 0)
+                pannelloMigliore.spaziLiberi.add(new ScartoDTO(migliorSpazio.x, migliorSpazio.y + altezzaT + spessoreLama, larghezzaT, hSopra));
+        } else {
+            if (wDestra > 0)
+                pannelloMigliore.spaziLiberi.add(new ScartoDTO(migliorSpazio.x + larghezzaT + spessoreLama, migliorSpazio.y, wDestra, altezzaT));
+            if (hSopra > 0)
+                pannelloMigliore.spaziLiberi.add(new ScartoDTO(migliorSpazio.x, migliorSpazio.y + altezzaT + spessoreLama, migliorSpazio.w, hSopra));
+        }
+    }
+
+    private PosizionatoOut estraiMossaMigliore(AnswerSets answerSets) throws Exception {
+        if (answerSets.getAnswersets().isEmpty()) return null;
+
+        // FIX: Sostituito .get(size - 1) con il più moderno .getLast() suggerito dall'IDE
+        AnswerSet bestAnswerSet = answerSets.getAnswersets().getLast();
+
+        for (Object obj : bestAnswerSet.getAtoms()) {
+            if (obj instanceof PosizionatoOut) {
+                return (PosizionatoOut) obj;
+            }
+        }
+        return null;
+    }
+
+    private List<PezzoDTO> clonaLista(List<PezzoDTO> originali) {
+        return originali.stream().map(p -> {
+            PezzoDTO c = new PezzoDTO();
+            c.id = p.id;
+            c.nome = p.nome;
+            c.larghezza = p.larghezza;
+            c.altezza = p.altezza;
+            c.quantita = p.quantita;
+            c.puoRuotare = p.puoRuotare;
+            c.indiceColore = p.indiceColore;
+            return c;
+        }).collect(Collectors.toList());
     }
 
     private static class PannelloAperto {
