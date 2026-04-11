@@ -1,9 +1,8 @@
 package uni.lignosuiteapi.service;
 
+import it.unical.mat.embasp.base.Output;
 import it.unical.mat.embasp.languages.asp.ASPInputProgram;
 import it.unical.mat.embasp.languages.asp.ASPMapper;
-import it.unical.mat.embasp.languages.asp.AnswerSet;
-import it.unical.mat.embasp.languages.asp.AnswerSets;
 import it.unical.mat.embasp.platforms.desktop.DesktopHandler;
 import it.unical.mat.embasp.specializations.dlv2.desktop.DLV2DesktopService;
 import org.slf4j.Logger;
@@ -19,12 +18,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class OttimizzazioneService {
 
-    // Aggiunto il Logger di Spring Boot per rimuovere il warning del printStackTrace
     private static final Logger logger = LoggerFactory.getLogger(OttimizzazioneService.class);
 
     // MODIFICA QUI IL PERCORSO SE USI WINDOWS (es. "lib/dlv2.exe") O LINUX
@@ -32,7 +32,6 @@ public class OttimizzazioneService {
     private static final String ENCODING_PATH = "src/main/resources/taglio.dl";
 
     public OttimizzazioneService() {
-        // Registrazione delle classi per embASP al momento dell'avvio del servizio
         try {
             ASPMapper.getInstance().registerClass(PezzoIn.class);
             ASPMapper.getInstance().registerClass(ScartoIn.class);
@@ -40,7 +39,6 @@ public class OttimizzazioneService {
             ASPMapper.getInstance().registerClass(PosizionatoOut.class);
             logger.info("Configurazione embASP completata con successo.");
         } catch (Exception e) {
-            // Gestione corretta delle eccezioni di Reflection sollevate da embASP
             logger.error("Errore durante la registrazione delle classi ASPMapper: ", e);
         }
     }
@@ -161,7 +159,6 @@ public class OttimizzazioneService {
                 for (int sIdx = 0; sIdx < pannello.spaziLiberi.size(); sIdx++) {
                     ScartoDTO scarto = pannello.spaziLiberi.get(sIdx);
                     if (scarto.w >= latoMinimoPezzo && scarto.h >= latoMinimoPezzo) {
-                        // FIX: Aggiunto cast (int) per rispettare la firma del costruttore ScartoIn
                         inputProgram.addObjectInput(new ScartoIn(pIdx + "-" + sIdx, (int) scarto.w, (int) scarto.h));
                         scartiValidiInviati++;
                     }
@@ -172,8 +169,9 @@ public class OttimizzazioneService {
 
             handler.addProgram(inputProgram);
 
-            AnswerSets answerSets = (AnswerSets) handler.startSync();
-            PosizionatoOut mossaMigliore = estraiMossaMigliore(answerSets);
+            // FIX: Bypassa l'ANTLR parser castando all'oggetto Output puro di embASP
+            Output output = handler.startSync();
+            PosizionatoOut mossaMigliore = estraiMossaMigliore(output);
 
             if (mossaMigliore != null) {
                 applicaMossaFisica(mossaMigliore, pezzo, pannelliAperti, spessoreLama);
@@ -181,7 +179,6 @@ public class OttimizzazioneService {
             }
 
         } catch (Exception e) {
-            // FIX: Sostituito printStackTrace con logger
             logger.error("Errore durante l'esecuzione del solver ASP", e);
         } finally {
             handler.removeAll();
@@ -228,18 +225,31 @@ public class OttimizzazioneService {
         }
     }
 
-    private PosizionatoOut estraiMossaMigliore(AnswerSets answerSets) throws Exception {
-        if (answerSets.getAnswersets().isEmpty()) return null;
-
-        // FIX: Sostituito .get(size - 1) con il più moderno .getLast() suggerito dall'IDE
-        AnswerSet bestAnswerSet = answerSets.getAnswersets().getLast();
-
-        for (Object obj : bestAnswerSet.getAtoms()) {
-            if (obj instanceof PosizionatoOut) {
-                return (PosizionatoOut) obj;
-            }
+    /**
+     * Estrae la mossa ottimale leggendo direttamente la stringa di output di DLV
+     * Bypassa il parser ANTLR di embASP per evitare conflitti di versione con Spring Boot.
+     */
+    private PosizionatoOut estraiMossaMigliore(Output output) {
+        String rawText = output.getOutput();
+        if (rawText == null || rawText.trim().isEmpty()) {
+            return null;
         }
-        return null;
+
+        // Creiamo una Regex che cerca esattamente: posizionato("id-dello-scarto", rotazione)
+        Pattern pattern = Pattern.compile("posizionato\\(\"([^\"]+)\",\\s*([01])\\)");
+        Matcher matcher = pattern.matcher(rawText);
+
+        PosizionatoOut ultimaMossa = null;
+
+        // Se ci sono più Answer Sets (DLV cerca la soluzione ottimale),
+        // il ciclo itererà fino a salvare l'ultima trovata, che è quella MIGLIORE
+        while (matcher.find()) {
+            ultimaMossa = new PosizionatoOut();
+            ultimaMossa.setIdScarto(matcher.group(1));
+            ultimaMossa.setRotazione(Integer.parseInt(matcher.group(2)));
+        }
+
+        return ultimaMossa;
     }
 
     private List<PezzoDTO> clonaLista(List<PezzoDTO> originali) {
