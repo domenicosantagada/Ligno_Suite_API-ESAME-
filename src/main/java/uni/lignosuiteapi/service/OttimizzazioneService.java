@@ -27,7 +27,6 @@ public class OttimizzazioneService {
 
     private static final Logger logger = LoggerFactory.getLogger(OttimizzazioneService.class);
 
-    // MODIFICA QUI IL PERCORSO SE USI WINDOWS (es. "lib/dlv2.exe") O LINUX
     private static final String DLV_PATH = "lib/dlv-2.1.1-macos";
     private static final String ENCODING_PATH = "src/main/resources/taglio.dl";
 
@@ -148,11 +147,14 @@ public class OttimizzazioneService {
         inputProgram.addFilesPath(ENCODING_PATH);
 
         try {
-            inputProgram.addObjectInput(new PezzoIn(pezzo.id, (int) pezzo.larghezza, (int) pezzo.altezza, pezzo.puoRuotare ? 1 : 0));
-            inputProgram.addObjectInput(new LamaIn((int) spessoreLama));
+            // Inglobiamo la lama direttamente nel pezzo inviato ad ASP per semplificare i calcoli
+            int pezzoW_ConLama = (int) Math.ceil(pezzo.larghezza + spessoreLama);
+            int pezzoH_ConLama = (int) Math.ceil(pezzo.altezza + spessoreLama);
+
+            inputProgram.addObjectInput(new PezzoIn(pezzo.id, pezzoW_ConLama, pezzoH_ConLama, pezzo.puoRuotare ? 1 : 0));
 
             int scartiValidiInviati = 0;
-            double latoMinimoPezzo = Math.min(pezzo.larghezza, pezzo.altezza);
+            double latoMinimoPezzo = Math.min(pezzoW_ConLama, pezzoH_ConLama);
 
             for (int pIdx = 0; pIdx < pannelliAperti.size(); pIdx++) {
                 PannelloAperto pannello = pannelliAperti.get(pIdx);
@@ -168,10 +170,8 @@ public class OttimizzazioneService {
             if (scartiValidiInviati == 0) return false;
 
             handler.addProgram(inputProgram);
-
             Output output = handler.startSync();
 
-            // LOG DI SICUREZZA: Intercetta gli errori di sintassi del file .dl
             String erroriDLV = output.getErrors();
             if (erroriDLV != null && !erroriDLV.trim().isEmpty()) {
                 logger.error("ERRORE DI SINTASSI DLV: \n" + erroriDLV);
@@ -192,32 +192,6 @@ public class OttimizzazioneService {
         return false;
     }
 
-
-    /**
-     * Estrae la mossa ottimale leggendo direttamente la stringa di output di DLV.
-     */
-    private PosizionatoOut estraiMossaMigliore(String rawText) {
-        if (rawText == null || rawText.trim().isEmpty()) {
-            return null;
-        }
-
-        // Regex rilassata: intercetta l'ID sia che abbia le virgolette sia che non le abbia
-        Pattern pattern = Pattern.compile("posizionato\\(\"?([^\",\\)]+)\"?,\\s*([01])\\)");
-        Matcher matcher = pattern.matcher(rawText);
-
-        PosizionatoOut ultimaMossa = null;
-
-        while (matcher.find()) {
-            ultimaMossa = new PosizionatoOut();
-            String rawId = matcher.group(1);
-            // Rimuoviamo eventuali doppi apici rimasti attaccati
-            ultimaMossa.setIdScarto(rawId.replace("\"", ""));
-            ultimaMossa.setRotazione(Integer.parseInt(matcher.group(2)));
-        }
-
-        return ultimaMossa;
-    }
-
     private void applicaMossaFisica(PosizionatoOut mossa, PezzoDTO pezzo, List<PannelloAperto> pannelliAperti, double spessoreLama) {
         String[] indici = mossa.getIdScarto().split("-");
         int pIdx = Integer.parseInt(indici[0]);
@@ -227,6 +201,8 @@ public class OttimizzazioneService {
         ScartoDTO migliorSpazio = pannelloMigliore.spaziLiberi.get(sIdx);
 
         boolean rotazioneMigliore = mossa.isRuotato();
+
+        // Usiamo le misure originali del pezzo per il rendering grafico del frontend
         double larghezzaT = rotazioneMigliore ? pezzo.altezza : pezzo.larghezza;
         double altezzaT = rotazioneMigliore ? pezzo.larghezza : pezzo.altezza;
 
@@ -239,6 +215,7 @@ public class OttimizzazioneService {
 
         pannelloMigliore.pezzi.add(pezzo);
 
+        // Split standard Guillotine (Calcolato calcolando lo spessore lama)
         double wDestra = migliorSpazio.w - larghezzaT - spessoreLama;
         double hSopra = migliorSpazio.h - altezzaT - spessoreLama;
 
@@ -257,7 +234,27 @@ public class OttimizzazioneService {
         }
     }
 
-   
+    private PosizionatoOut estraiMossaMigliore(String rawText) {
+        if (rawText == null || rawText.trim().isEmpty()) {
+            return null;
+        }
+
+        // Regex Cerca: scelto("id-scarto", rotazione)
+        // Usare "scelto" protegge da collisioni testuali con altri predicati!
+        Pattern pattern = Pattern.compile("scelto\\(\"?([^\",\\)]+)\"?,\\s*([01])\\)");
+        Matcher matcher = pattern.matcher(rawText);
+
+        PosizionatoOut ultimaMossa = null;
+
+        while (matcher.find()) {
+            ultimaMossa = new PosizionatoOut();
+            ultimaMossa.setIdScarto(matcher.group(1).replace("\"", ""));
+            ultimaMossa.setRotazione(Integer.parseInt(matcher.group(2)));
+        }
+
+        return ultimaMossa;
+    }
+
     private List<PezzoDTO> clonaLista(List<PezzoDTO> originali) {
         return originali.stream().map(p -> {
             PezzoDTO c = new PezzoDTO();

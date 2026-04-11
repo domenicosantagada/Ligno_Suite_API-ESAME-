@@ -1,53 +1,47 @@
 % =====================================================================
-% MOTORE DI OTTIMIZZAZIONE TAGLIO (Sintassi Nativa DLV)
+% MOTORE DI OTTIMIZZAZIONE TAGLIO (Sintassi Nativa DLV Sicura)
 % =====================================================================
 
-% --- 1. GUESS (Generazione dello spazio di ricerca) ---
-% Creiamo le possibili mosse: per ogni scarto, possiamo piazzare il pezzo dritto (0) o ruotato (1)
-mossa(ID_Scarto, 0) :- scarto_libero(ID_Scarto, _, _).
-mossa(ID_Scarto, 1) :- scarto_libero(ID_Scarto, _, _).
+% 1. DOMINIO E GENERAZIONE (Mossa)
+% Definiamo le rotazioni consentite: se il pezzo NON può ruotare (0), la rotazione(1) non esiste.
+rotazione_valida(0).
+rotazione_valida(1) :- pezzo(_, _, _, 1).
 
-% Il solver indovina la mossa: per ogni mossa valida, o è "posizionata" o "non_posizionata"
-posizionato(ID_Scarto, Rotazione) | non_posizionato(ID_Scarto, Rotazione) :- mossa(ID_Scarto, Rotazione).
+% Generiamo esattamente una mossa (uno scarto e una rotazione rigorosamente valida)
+mossa(S, R) :- scarto_libero(S, _, _), rotazione_valida(R).
 
-% Vincolo di cardinalità: DEVE esistere ESATTAMENTE UNA singola mossa "posizionata"
-:- #count{ID, R : posizionato(ID, R)} != 1.
+% Usiamo le parole 'scelto' e 'ignorato' per evitare conflitti logici nella lettura Java
+scelto(S, R) | ignorato(S, R) :- mossa(S, R).
 
-% Non possiamo ruotare il pezzo se la sua proprietà puoRuotare è 0 (false)
-:- posizionato(_, 1), pezzo(_, _, _, 0).
+% OBBLIGO: ci deve essere esattamente una mossa scelta
+:- #count{S, R : scelto(S, R)} != 1.
 
-% Calcolo dimensioni effettive comprensive di spessore lama
-dim_effettiva(EW, EH) :- pezzo(_, PW, PH, _), posizionato(_, 0), lama(L), EW = PW + L, EH = PH + L.
-dim_effettiva(EW, EH) :- pezzo(_, PW, PH, _), posizionato(_, 1), lama(L), EW = PH + L, EH = PW + L.
+% 2. CALCOLO DIMENSIONI E LIMITI FISICI
+% Estraiamo le dimensioni del pezzo in base alla rotazione scelta da ASP
+dim_pezzo(PW, PH) :- scelto(_, 0), pezzo(_, PW, PH, _).
+dim_pezzo(PH, PW) :- scelto(_, 1), pezzo(_, PW, PH, _).
 
-% --- 2. CHECK (Vincoli Forti) ---
-% Il pezzo non deve superare i limiti fisici dello scarto scelto
-:- posizionato(ID_Scarto, _), dim_effettiva(W, _), scarto_libero(ID_Scarto, SW, _), W > SW.
-:- posizionato(ID_Scarto, _), dim_effettiva(_, H), scarto_libero(ID_Scarto, _, SH), H > SH.
+% VINCOLO FORTE ASSOLUTO: Il pezzo non deve mai eccedere lo scarto
+:- scelto(S, _), dim_pezzo(W, _), scarto_libero(S, SW, _), W > SW.
+:- scelto(S, _), dim_pezzo(_, H), scarto_libero(S, _, SH), H > SH.
 
-% --- 3. OPTIMIZE (Vincoli Deboli) ---
-% Calcoliamo l'area rimanente (Scomposta in passaggi semplici per DLV)
-area_residua(Area) :-
-    posizionato(ID_Scarto, _),
-    dim_effettiva(W, H),
-    scarto_libero(ID_Scarto, SW, SH),
+% 3. OTTIMIZZAZIONE (Euristiche)
+% Calcolo Area Sprecata
+area_sprecata(Area) :-
+    scelto(S, _), dim_pezzo(W, H), scarto_libero(S, SW, SH),
     AreaScarto = SW * SH,
     AreaPezzo = W * H,
     Area = AreaScarto - AreaPezzo.
 
-% Calcoliamo i resti per la Shorter Axis Rule
-lato_corto(Min) :-
-    posizionato(ID_Scarto, _), dim_effettiva(W, H), scarto_libero(ID_Scarto, SW, SH),
-    RestoX = SW - W, RestoY = SH - H,
-    RestoX <= RestoY, Min = RestoX.
+% Minimizza lo spazio sprecato (Priorità Massima)
+:~ area_sprecata(A). [A@2, A]
 
-lato_corto(Min) :-
-    posizionato(ID_Scarto, _), dim_effettiva(W, H), scarto_libero(ID_Scarto, SW, SH),
-    RestoX = SW - W, RestoY = SH - H,
-    RestoY < RestoX, Min = RestoY.
+% Regola dell'Asse Corto (favorisce tagli dritti e puliti)
+resto_x(RX) :- scelto(S, _), dim_pezzo(W, _), scarto_libero(S, SW, _), RX = SW - W.
+resto_y(RY) :- scelto(S, _), dim_pezzo(_, H), scarto_libero(S, _, SH), RY = SH - H.
 
-% Penalità Livello 2: Minimizza lo spazio sprecato
-:~ area_residua(Area). [Area@2, Area]
+lato_corto(Min) :- resto_x(RX), resto_y(RY), RX <= RY, Min = RX.
+lato_corto(Min) :- resto_x(RX), resto_y(RY), RY < RX, Min = RY.
 
-% Penalità Livello 1: Massimizza il lato corto rimanente (minimizzando il suo opposto)
+% Massimizza il lato corto rimanente
 :~ lato_corto(Min), Penalita = 10000 - Min. [Penalita@1, Penalita]
