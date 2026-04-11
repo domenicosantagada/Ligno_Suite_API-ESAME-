@@ -169,9 +169,15 @@ public class OttimizzazioneService {
 
             handler.addProgram(inputProgram);
 
-            // FIX: Bypassa l'ANTLR parser castando all'oggetto Output puro di embASP
             Output output = handler.startSync();
-            PosizionatoOut mossaMigliore = estraiMossaMigliore(output);
+
+            // LOG DI SICUREZZA: Intercetta gli errori di sintassi del file .dl
+            String erroriDLV = output.getErrors();
+            if (erroriDLV != null && !erroriDLV.trim().isEmpty()) {
+                logger.error("ERRORE DI SINTASSI DLV: \n" + erroriDLV);
+            }
+
+            PosizionatoOut mossaMigliore = estraiMossaMigliore(output.getOutput());
 
             if (mossaMigliore != null) {
                 applicaMossaFisica(mossaMigliore, pezzo, pannelliAperti, spessoreLama);
@@ -184,6 +190,32 @@ public class OttimizzazioneService {
             handler.removeAll();
         }
         return false;
+    }
+
+
+    /**
+     * Estrae la mossa ottimale leggendo direttamente la stringa di output di DLV.
+     */
+    private PosizionatoOut estraiMossaMigliore(String rawText) {
+        if (rawText == null || rawText.trim().isEmpty()) {
+            return null;
+        }
+
+        // Regex rilassata: intercetta l'ID sia che abbia le virgolette sia che non le abbia
+        Pattern pattern = Pattern.compile("posizionato\\(\"?([^\",\\)]+)\"?,\\s*([01])\\)");
+        Matcher matcher = pattern.matcher(rawText);
+
+        PosizionatoOut ultimaMossa = null;
+
+        while (matcher.find()) {
+            ultimaMossa = new PosizionatoOut();
+            String rawId = matcher.group(1);
+            // Rimuoviamo eventuali doppi apici rimasti attaccati
+            ultimaMossa.setIdScarto(rawId.replace("\"", ""));
+            ultimaMossa.setRotazione(Integer.parseInt(matcher.group(2)));
+        }
+
+        return ultimaMossa;
     }
 
     private void applicaMossaFisica(PosizionatoOut mossa, PezzoDTO pezzo, List<PannelloAperto> pannelliAperti, double spessoreLama) {
@@ -225,33 +257,7 @@ public class OttimizzazioneService {
         }
     }
 
-    /**
-     * Estrae la mossa ottimale leggendo direttamente la stringa di output di DLV
-     * Bypassa il parser ANTLR di embASP per evitare conflitti di versione con Spring Boot.
-     */
-    private PosizionatoOut estraiMossaMigliore(Output output) {
-        String rawText = output.getOutput();
-        if (rawText == null || rawText.trim().isEmpty()) {
-            return null;
-        }
-
-        // Creiamo una Regex che cerca esattamente: posizionato("id-dello-scarto", rotazione)
-        Pattern pattern = Pattern.compile("posizionato\\(\"([^\"]+)\",\\s*([01])\\)");
-        Matcher matcher = pattern.matcher(rawText);
-
-        PosizionatoOut ultimaMossa = null;
-
-        // Se ci sono più Answer Sets (DLV cerca la soluzione ottimale),
-        // il ciclo itererà fino a salvare l'ultima trovata, che è quella MIGLIORE
-        while (matcher.find()) {
-            ultimaMossa = new PosizionatoOut();
-            ultimaMossa.setIdScarto(matcher.group(1));
-            ultimaMossa.setRotazione(Integer.parseInt(matcher.group(2)));
-        }
-
-        return ultimaMossa;
-    }
-
+   
     private List<PezzoDTO> clonaLista(List<PezzoDTO> originali) {
         return originali.stream().map(p -> {
             PezzoDTO c = new PezzoDTO();
