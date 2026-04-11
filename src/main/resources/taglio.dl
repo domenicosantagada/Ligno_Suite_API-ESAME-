@@ -1,47 +1,31 @@
-% =====================================================================
-% MOTORE DI OTTIMIZZAZIONE TAGLIO (Approccio Sequenziale)
-% =====================================================================
-
 % 1. GUESS (Generazione dello spazio di ricerca)
-% Il solver sceglie in quale scarto posizionare il pezzo e se ruotarlo.
-% Sintassi: Scegli ESATTAMENTE 1 combinazione di Scarto e Rotazione (0 o 1)
 1 { posizionato(ID_Scarto, Rotazione) : scarto_libero(ID_Scarto, _, _), Rotazione = 0..1 } 1.
-
-% Non possiamo ruotare il pezzo se la sua proprietà puoRuotare è 0 (false)
 :- posizionato(_, 1), pezzo(_, _, _, 0).
 
-% Calcoliamo le dimensioni effettive del taglio (sommando lo spessore della lama)
-% Se non è ruotato (0):
-dim_effettiva(PW + L, PH + L) :- pezzo(_, PW, PH, _), posizionato(_, 0), lama(L).
-% Se è ruotato (1), invertiamo larghezza e altezza:
-dim_effettiva(PH + L, PW + L) :- pezzo(_, PW, PH, _), posizionato(_, 1), lama(L).
+% Calcolo dimensioni effettive (La matematica DEVE stare nel body della regola)
+dim_effettiva(EW, EH) :- pezzo(_, PW, PH, _), posizionato(_, 0), lama(L), EW = PW + L, EH = PH + L.
+dim_effettiva(EW, EH) :- pezzo(_, PW, PH, _), posizionato(_, 1), lama(L), EW = PH + L, EH = PW + L.
 
-% 2. CHECK (Vincoli Forti - Fisica e Geometria)
-% Il pezzo, comprensivo di lama, non deve uscire dai bordi dello scarto selezionato
+% 2. CHECK (Vincoli Forti)
 :- posizionato(ID_Scarto, _), dim_effettiva(W, _), scarto_libero(ID_Scarto, SW, _), W > SW.
 :- posizionato(ID_Scarto, _), dim_effettiva(_, H), scarto_libero(ID_Scarto, _, SH), H > SH.
 
-% 3. OPTIMIZE (Vincoli Deboli - Le Euristiche di Intelligenza)
-% Calcoliamo l'area dello spazio "buttato" se scegliamo questa configurazione
+% 3. OPTIMIZE (Vincoli Deboli)
 area_residua(Area) :-
     posizionato(ID_Scarto, _),
     dim_effettiva(W, H),
     scarto_libero(ID_Scarto, SW, SH),
     Area = (SW * SH) - (W * H).
 
-% Calcoliamo il lato corto residuo per favorire tagli "puliti"
 lato_corto(Min) :-
     posizionato(ID_Scarto, _), dim_effettiva(W, H), scarto_libero(ID_Scarto, SW, SH),
     RestoX = SW - W, RestoY = SH - H,
     RestoX <= RestoY, Min = RestoX.
+
 lato_corto(Min) :-
     posizionato(ID_Scarto, _), dim_effettiva(W, H), scarto_libero(ID_Scarto, SW, SH),
     RestoX = SW - W, RestoY = SH - H,
     RestoY < RestoX, Min = RestoY.
 
-% Euristica 1 (Tightest Fit): Minimizza l'area sprecata (Priorità massima @2)
 :~ area_residua(Area). [Area@2]
-
-% Euristica 2 (Shorter Axis Rule): A parità di area, preferisci il taglio che lascia il lato corto residuo PIÙ GRANDE possibile.
-% In ASP si minimizza, quindi penalizziamo se il lato corto è piccolo (10000 - Min serve a ribaltare la scala)
 :~ lato_corto(Min), Penalita = 10000 - Min. [Penalita@1]
