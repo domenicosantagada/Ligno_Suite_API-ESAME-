@@ -26,13 +26,18 @@ public class AiController {
     private final String geminiApiKey;
     private final RestTemplate restTemplate;
 
-    // CONSTRUCTOR INJECTION: Iniettiamo sia la chiave API che un'istanza riutilizzabile di RestTemplate
+    // CONSTRUCTOR INJECTION
     public AiController(@Value("${gemini.api.key}") String geminiApiKey) {
+        // Iniettiamo la chiave API di Gemini dal file di configurazione (application.properties)
         this.geminiApiKey = geminiApiKey;
-        // Creiamo un'unica istanza di RestTemplate da riutilizzare per tutte le richieste
+        // Inizializziamo RestTemplate per fare richieste HTTP a Google Gemini
         this.restTemplate = new RestTemplate();
     }
 
+    /**
+     * Endpoint POST per generare una descrizione migliorata da una breve nota.
+     * Chiamata: POST /api/api/genera-descrizione
+     */
     @PostMapping("/genera-descrizione")
     public ResponseEntity<Map<String, String>> generaDescrizione(@RequestBody Map<String, String> request) {
         String inputTesto = request.get("testo");
