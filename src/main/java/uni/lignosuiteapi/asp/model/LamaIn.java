@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// Classe che rappresenta l'input per la lama, con un solo parametro: lo spessore.
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
