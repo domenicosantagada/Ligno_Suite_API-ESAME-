@@ -1,47 +1,55 @@
 % =====================================================================
-% MOTORE DI OTTIMIZZAZIONE TAGLIO (Sintassi Nativa DLV Sicura)
+% MOTORE DI OTTIMIZZAZIONE TAGLIO (BSSF + Best Area Fit)
 % =====================================================================
 
 % 1. DOMINIO E GENERAZIONE (Mossa)
-% Definiamo le rotazioni consentite: se il pezzo NON può ruotare (0), la rotazione(1) non esiste.
 rotazione_valida(0).
 rotazione_valida(1) :- pezzo(_, _, _, 1).
 
-% Generiamo esattamente una mossa (uno scarto e una rotazione rigorosamente valida)
 mossa(S, R) :- scarto_libero(S, _, _), rotazione_valida(R).
 
-% Usiamo le parole 'scelto' e 'ignorato' per evitare conflitti logici nella lettura Java
+% Il solver DEVE scegliere esattamente una singola combinazione Scarto/Rotazione
 scelto(S, R) | ignorato(S, R) :- mossa(S, R).
-
-% OBBLIGO: ci deve essere esattamente una mossa scelta
 :- #count{S, R : scelto(S, R)} != 1.
 
-% 2. CALCOLO DIMENSIONI E LIMITI FISICI
-% Estraiamo le dimensioni del pezzo in base alla rotazione scelta da ASP
+% 2. DIMENSIONI E LIMITI FISICI (Senza Lama)
 dim_pezzo(PW, PH) :- scelto(_, 0), pezzo(_, PW, PH, _).
 dim_pezzo(PH, PW) :- scelto(_, 1), pezzo(_, PW, PH, _).
 
-% VINCOLO FORTE ASSOLUTO: Il pezzo non deve mai eccedere lo scarto
+% Il pezzo deve entrare fisicamente nel buco
 :- scelto(S, _), dim_pezzo(W, _), scarto_libero(S, SW, _), W > SW.
 :- scelto(S, _), dim_pezzo(_, H), scarto_libero(S, _, SH), H > SH.
 
-% 3. OTTIMIZZAZIONE (Euristiche)
-% Calcolo Area Sprecata
+% 3. OTTIMIZZAZIONE (Il Cervello BSSF)
+
+% Calcoliamo i resti (Spazio - Pezzo - Lama).
+% Se il resto teorico è negativo o zero (il pezzo entra a filo), il resto effettivo è 0.
+resto_x(V) :- scelto(S, _), dim_pezzo(W, _), scarto_libero(S, SW, _), lama(L), V = SW - W - L, V > 0.
+resto_x(0) :- scelto(S, _), dim_pezzo(W, _), scarto_libero(S, SW, _), lama(L), SW - W - L <= 0.
+
+resto_y(V) :- scelto(S, _), dim_pezzo(_, H), scarto_libero(S, _, SH), lama(L), V = SH - H - L, V > 0.
+resto_y(0) :- scelto(S, _), dim_pezzo(_, H), scarto_libero(S, _, SH), lama(L), SH - H - L <= 0.
+
+% Ordiniamo i resti per capire qual è il lato corto e quale il lungo
+min_resto(RX) :- resto_x(RX), resto_y(RY), RX <= RY.
+min_resto(RY) :- resto_x(RX), resto_y(RY), RY < RX.
+
+max_resto(RX) :- resto_x(RX), resto_y(RY), RX > RY.
+max_resto(RY) :- resto_x(RX), resto_y(RY), RY >= RX.
+
+% Calcolo Area Residua
 area_sprecata(Area) :-
     scelto(S, _), dim_pezzo(W, H), scarto_libero(S, SW, SH),
-    AreaScarto = SW * SH,
-    AreaPezzo = W * H,
-    Area = AreaScarto - AreaPezzo.
+    Area = (SW * SH) - (W * H).
 
-% Minimizza lo spazio sprecato (Priorità Massima)
-:~ area_sprecata(A). [A@2, A]
+% --- GERARCHIA DELLE PREFERENZE ---
 
-% Regola dell'Asse Corto (favorisce tagli dritti e puliti)
-resto_x(RX) :- scelto(S, _), dim_pezzo(W, _), scarto_libero(S, SW, _), RX = SW - W.
-resto_y(RY) :- scelto(S, _), dim_pezzo(_, H), scarto_libero(S, _, SH), RY = SH - H.
+% Priorità 3 (SUPREMA): Cerca l'incastro perfetto a filo. Minimizza il lato corto rimanente.
+% Questo spinge il pezzo nell'angolo dello scarto e fa capire al solver quando è vitale usare la Rotazione.
+:~ min_resto(M). [M@3, M]
 
-lato_corto(Min) :- resto_x(RX), resto_y(RY), RX <= RY, Min = RX.
-lato_corto(Min) :- resto_x(RX), resto_y(RY), RY < RX, Min = RY.
+% Priorità 2 (ALTA): A parità di incastro a filo da un lato, compatta anche l'altro asse.
+:~ max_resto(M). [M@2, M]
 
-% Massimizza il lato corto rimanente
-:~ lato_corto(Min), Penalita = 10000 - Min. [Penalita@1, Penalita]
+% Priorità 1 (BASSA): Evita di usare scarti giganti per pezzi minuscoli.
+:~ area_sprecata(A). [A@1, A]

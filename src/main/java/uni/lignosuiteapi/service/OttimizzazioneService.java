@@ -147,19 +147,22 @@ public class OttimizzazioneService {
         inputProgram.addFilesPath(ENCODING_PATH);
 
         try {
-            // Inglobiamo la lama direttamente nel pezzo inviato ad ASP per semplificare i calcoli
-            int pezzoW_ConLama = (int) Math.ceil(pezzo.larghezza + spessoreLama);
-            int pezzoH_ConLama = (int) Math.ceil(pezzo.altezza + spessoreLama);
+            // FIX: Inviamo ad ASP le dimensioni PURE, senza "ingrassarle" con la lama.
+            // In questo modo ASP non rifiuterà gli incastri perfetti "a filo"!
+            int pezzoW = (int) Math.ceil(pezzo.larghezza);
+            int pezzoH = (int) Math.ceil(pezzo.altezza);
 
-            inputProgram.addObjectInput(new PezzoIn(pezzo.id, pezzoW_ConLama, pezzoH_ConLama, pezzo.puoRuotare ? 1 : 0));
+            inputProgram.addObjectInput(new PezzoIn(pezzo.id, pezzoW, pezzoH, pezzo.puoRuotare ? 1 : 0));
+            inputProgram.addObjectInput(new LamaIn((int) Math.ceil(spessoreLama)));
 
             int scartiValidiInviati = 0;
-            double latoMinimoPezzo = Math.min(pezzoW_ConLama, pezzoH_ConLama);
+            double latoMinimoPezzo = Math.min(pezzoW, pezzoH);
 
             for (int pIdx = 0; pIdx < pannelliAperti.size(); pIdx++) {
                 PannelloAperto pannello = pannelliAperti.get(pIdx);
                 for (int sIdx = 0; sIdx < pannello.spaziLiberi.size(); sIdx++) {
                     ScartoDTO scarto = pannello.spaziLiberi.get(sIdx);
+                    // Inviamo lo scarto solo se può fisicamente contenere il pezzo
                     if (scarto.w >= latoMinimoPezzo && scarto.h >= latoMinimoPezzo) {
                         inputProgram.addObjectInput(new ScartoIn(pIdx + "-" + sIdx, (int) scarto.w, (int) scarto.h));
                         scartiValidiInviati++;
