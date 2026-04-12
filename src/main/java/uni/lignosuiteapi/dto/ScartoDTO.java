@@ -1,5 +1,8 @@
 package uni.lignosuiteapi.dto;
 
+/**
+ * DTO per rappresentare lo scarto di un pannello dopo l'ottimizzazione del taglio.
+ */
 public class ScartoDTO {
     public double x, y, w, h;
 

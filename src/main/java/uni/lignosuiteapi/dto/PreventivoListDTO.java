@@ -2,6 +2,9 @@ package uni.lignosuiteapi.dto;
 
 import java.time.LocalDate;
 
+/**
+ * DTO per rappresentare un preventivo in una lista, con informazioni essenziali.
+ */
 public class PreventivoListDTO {
     public Long id;
     public LocalDate date;

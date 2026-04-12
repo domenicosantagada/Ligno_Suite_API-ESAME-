@@ -1,5 +1,8 @@
 package uni.lignosuiteapi.dto;
 
+/**
+ * DTO per rappresentare un item di un preventivo.
+ */
 public class PreventivoItemDTO {
     public Long id;
     public String description;
