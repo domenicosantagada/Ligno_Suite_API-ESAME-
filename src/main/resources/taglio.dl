@@ -55,4 +55,5 @@ area_sprecata(Area) :-
 :~ area_sprecata(A). [A@1, A]
 
 #show scelto/2.
-#show scarto_libero/3.
+%#show scarto_libero/3.
+%#show rotazione_valida/1.
