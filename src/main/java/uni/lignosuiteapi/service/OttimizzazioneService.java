@@ -152,11 +152,19 @@ public class OttimizzazioneService {
             int pezzoW = (int) Math.ceil(pezzo.larghezza);
             int pezzoH = (int) Math.ceil(pezzo.altezza);
 
+            // --- LOG 1: Info sul Pezzo ---
+            logger.info("\n-------------------------------------------------------------");
+            logger.info(">>> INPUT PEZZO: [ID: {} | Nome: '{}' | Dim: {}x{} | Ruotabile: {}]",
+                    pezzo.id, pezzo.nome, pezzoW, pezzoH, pezzo.puoRuotare);
+
             inputProgram.addObjectInput(new PezzoIn(pezzo.id, pezzoW, pezzoH, pezzo.puoRuotare ? 1 : 0));
             inputProgram.addObjectInput(new LamaIn((int) Math.ceil(spessoreLama)));
 
             int scartiValidiInviati = 0;
             double latoMinimoPezzo = Math.min(pezzoW, pezzoH);
+
+            // Variabile d'appoggio per stampare l'elenco degli scarti
+            List<String> logScarti = new ArrayList<>();
 
             for (int pIdx = 0; pIdx < pannelliAperti.size(); pIdx++) {
                 PannelloAperto pannello = pannelliAperti.get(pIdx);
@@ -164,13 +172,22 @@ public class OttimizzazioneService {
                     ScartoDTO scarto = pannello.spaziLiberi.get(sIdx);
                     // Inviamo lo scarto solo se può fisicamente contenere il pezzo
                     if (scarto.w >= latoMinimoPezzo && scarto.h >= latoMinimoPezzo) {
-                        inputProgram.addObjectInput(new ScartoIn(pIdx + "-" + sIdx, (int) scarto.w, (int) scarto.h));
+                        String idScarto = pIdx + "-" + sIdx;
+                        inputProgram.addObjectInput(new ScartoIn(idScarto, (int) scarto.w, (int) scarto.h));
+
+                        logScarti.add(String.format("[%s: %dx%d]", idScarto, (int) scarto.w, (int) scarto.h));
                         scartiValidiInviati++;
                     }
                 }
             }
 
-            if (scartiValidiInviati == 0) return false;
+            if (scartiValidiInviati == 0) {
+                logger.info("--- NESSUNO SCARTO COMPATIBILE TROVATO ---");
+                return false;
+            }
+
+            // --- LOG 2: Info sugli Scarti ---
+            logger.info(">>> INPUT SCARTI: Passati ad ASP {} scarti validi: {}", scartiValidiInviati, String.join(", ", logScarti));
 
             handler.addProgram(inputProgram);
             Output output = handler.startSync();
@@ -180,11 +197,22 @@ public class OttimizzazioneService {
                 logger.error("ERRORE DI SINTASSI DLV: \n" + erroriDLV);
             }
 
-            PosizionatoOut mossaMigliore = estraiMossaMigliore(output.getOutput());
+            String outputTestuale = output.getOutput();
 
+            // --- LOG 3: Output puro di ASP ---
+            // Puliamo eventuali accapo o formattazioni sporche di DLV per renderlo leggibile in una riga
+            String cleanOutput = (outputTestuale != null) ? outputTestuale.replace("\n", " ").trim() : "NULL";
+            logger.info("<<< OUTPUT ASP: {}", cleanOutput);
+
+            PosizionatoOut mossaMigliore = estraiMossaMigliore(outputTestuale);
+
+            // --- LOG 4: Mossa interpretata ---
             if (mossaMigliore != null) {
+                logger.info("=== DECISIONE: Inserito nello scarto '{}' - Ruotato: {}", mossaMigliore.getIdScarto(), (mossaMigliore.getRotazione() == 1));
                 applicaMossaFisica(mossaMigliore, pezzo, pannelliAperti, spessoreLama);
                 return true;
+            } else {
+                logger.info("=== DECISIONE: ASP non ha trovato nessun incastro valido (Pezzo scartato).");
             }
 
         } catch (Exception e) {
