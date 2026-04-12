@@ -53,3 +53,6 @@ area_sprecata(Area) :-
 
 % Priorità 1 (BASSA): Evita di usare scarti giganti per pezzi minuscoli.
 :~ area_sprecata(A). [A@1, A]
+
+#show scelto/2.
+#show scarto_libero/3.
