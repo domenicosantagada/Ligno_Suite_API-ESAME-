@@ -4,49 +4,50 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 /**
- * Entità JPA Utente (tabella "utente")
+ * Entità JPA collegata alla tabella "utente" nel database.
+ * Rappresenta un utente del sistema, che può essere un falegname o un cliente (a seconda del ruolo).
  */
 @Data
 @Entity
 @Table(name = "utente")
 public class Utente {
 
-    // === ID ===
+    // DATI PRINCIPALI
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // === Accesso ===
     private String ruolo;
+
     @Column(unique = true, nullable = false)
     private String email;
+
     private String password;
 
-    // === Anagrafica ===
+
     private String nome;
     private String nomeAzienda;
     private String nomeTitolare;
     private String cognomeTitolare;
-
-    // === Contatti ===
     private String telefono;
-
-    // === Dati fiscali ===
     private String partitaIva;
     private String codiceFiscale;
-
-    // === Indirizzo ===
     private String indirizzo;
     private String citta;
     private String cap;
     private String provincia;
 
-    // === Logo ===
     @Column(columnDefinition = "TEXT")
     private String logoBase64;
 
+    // METODI DI UTILITY
+
     /**
-     * Normalizza i campi prima di INSERT/UPDATE
+     * Metodo che viene chiamato automaticamente da Hibernate prima di salvare (PrePersist) o aggiornare (PreUpdate) un utente.
+     * Si occupa di formattare i campi "ruolo" in maiuscolo e senza spazi, "email" in minuscolo e senza spazi, i campi anagrafici e
+     * di indirizzo in formato "Title Case" (prima lettera maiuscola, resto minuscolo), "partitaIva" e "codiceFiscale" in maiuscolo e
+     * senza spazi, e "telefono" e "cap" senza spazi. Se il campo "ruolo" è vuoto o null, viene impostato a "FALEGNAME" di default.
      */
     @PrePersist
     @PreUpdate
@@ -103,7 +104,7 @@ public class Utente {
     }
 
     /**
-     * Capitalizza ogni parola
+     * Metodo per capitalizzare ogni parola in una stringa, mettendo la prima lettera in maiuscolo e il resto in minuscolo.
      */
     private String capitalizzaParole(String str) {
 

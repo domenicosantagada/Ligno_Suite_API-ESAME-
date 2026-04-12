@@ -5,21 +5,25 @@ import lombok.Data;
 
 import java.time.LocalDate;
 
+/**
+ * Entità JPA collegata alla tabella "articolo" nel database.
+ * Rappresenta un articolo acquistato dal falegname
+ */
 @Data
 @Entity
 @Table(name = "articolo")
 public class Articolo {
 
+    // DATTA PRINCIPALI
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // === Attributi principali dell'articolo ===
-
-    @Column(nullable = false) // Assicura che il nome non sia mai nullo nel DB
+    @Column(nullable = false)
     private String nome;
 
-    @Column(columnDefinition = "TEXT") // Permette descrizioni lunghe
+    @Column(columnDefinition = "TEXT")
     private String descrizione;
 
     @Column(nullable = false)
@@ -31,19 +35,20 @@ public class Articolo {
 
     private LocalDate dataAcquisto;
 
-    // === Relazione con Utente (Molti a Uno) ===
+    // Relazione ManyToOne con Utente
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "utente_id", nullable = false)
     private Utente utente;
 
-    // === Metodi di utilità (Automatizzati tramite Lifecycle Callbacks) ===
+
+    // METODI DI UTILITY
 
     /**
-     * Normalizza i dati testuali dell'articolo.
-     * Verrà richiamato IN AUTOMATICO da Hibernate!
+     * Metodo che viene chiamato automaticamente da Hibernate prima di salvare (PrePersist) o aggiornare (PreUpdate) un articolo.
+     * Si occupa di formattare i campi "nome" e "fornitore" in formato "Title Case" (prima lettera maiuscola, resto minuscolo).
      */
-    @PrePersist // Lanciato automaticamente prima di una INSERT (nuovo salvataggio)
-    @PreUpdate  // Lanciato automaticamente prima di una UPDATE (modifica)
+    @PrePersist
+    @PreUpdate
     public void formattaDati() {
         if (this.nome != null) {
             this.nome = capitalizzaParole(this.nome);
@@ -54,8 +59,7 @@ public class Articolo {
     }
 
     /**
-     * Converte una stringa in formato "Title Case".
-     * Rimane invariato!
+     * Metodo per capitalizzare ogni parola in una stringa, mettendo la prima lettera in maiuscolo e il resto in minuscolo.
      */
     private String capitalizzaParole(String str) {
         str = str.trim();

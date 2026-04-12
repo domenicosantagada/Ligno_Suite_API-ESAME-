@@ -3,32 +3,46 @@ package uni.lignosuiteapi.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+/**
+ * Entità JPA collegata alla tabella "cliente" nel database.
+ * Rappresenta un cliente del falegname.
+ */
 @Data
 @Entity
 @Table(name = "cliente")
 public class Cliente {
 
+
+    // DATI PRINCIPALI
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // === Riferimento all'utente (Relazione JPA) ===
-    // Sostituisce il vecchio "private Long utenteId;"
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "utente_id", nullable = false)
-    private Utente utente;
-
-    // === Dati principali del cliente ===
     @Column(nullable = false)
     private String nome;
 
     private String email;
+
     private String telefono;
+
     private String partitaIva;
 
-    // === Formattazione Automatica ===
-    @PrePersist // Eseguito prima della INSERT
-    @PreUpdate  // Eseguito prima della UPDATE
+
+    // Relazione ManyToOne con Utente
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "utente_id", nullable = false)
+    private Utente utente;
+
+    // METODI DI UTILITY
+
+
+    /**
+     * Metodo che viene chiamato automaticamente da Hibernate prima di salvare (PrePersist) o aggiornare (PreUpdate) un cliente.
+     * Si occupa di formattare i campi "nome" in formato "Title Case" (prima lettera maiuscola, resto minuscolo), "email" in minuscolo e senza spazi, "partitaIva" in maiuscolo e senza spazi, e "telefono" senza spazi.
+     */
+    @PrePersist
+    @PreUpdate
     public void formattaDati() {
         if (this.nome != null)
             this.nome = capitalizzaParole(this.nome);
@@ -43,6 +57,9 @@ public class Cliente {
             this.telefono = this.telefono.trim();
     }
 
+    /**
+     * Metodo per capitalizzare ogni parola in una stringa, mettendo la prima lettera in maiuscolo e il resto in minuscolo.
+     */
     private String capitalizzaParole(String str) {
         str = str.trim();
         if (str.isEmpty()) return str;
