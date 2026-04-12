@@ -1,58 +1,102 @@
-% =====================================================================
-% MOTORE DI OTTIMIZZAZIONE TAGLIO (BSSF + Best Area Fit)
-% =====================================================================
+% =============================================================================================
+% ===================== ANSWWER SET PROGRAMMING PER IL PROBLEMA DEL TAGLIO ====================
+% =============================================================================================
 
-% 1. DOMINIO E GENERAZIONE (Mossa)
+% --------------------------------------------------------
+% 1. DEFINIZIONE DEL DOMINIO E GENERAZIONE DELLE MOSSE
+% --------------------------------------------------------
+
+
+% La rotazione 0 rappresenta il pezzo nella sua orientazione originale
+% La rotazione 1 rappresenta il pezzo ruotato di 90 gradi ed è valida solo se il pezzo è ruotabile (contrassenato con 1)
 rotazione_valida(0).
 rotazione_valida(1) :- pezzo(_, _, _, 1).
 
+% Una mossa è generata per ogni combinazione di Scarto e Rotazione valida e sono tutte candidate per essere scelte dal solver.
 mossa(S, R) :- scarto_libero(S, _, _), rotazione_valida(R).
 
-% Il solver DEVE scegliere esattamente una singola combinazione Scarto/Rotazione
+% Ogni mossa può essere scelta o ignorata
 scelto(S, R) | ignorato(S, R) :- mossa(S, R).
+
+% VINCOLO DI UNICITÀ: Deve essere scelta esattamente una mossa (un solo scarto e una sola rotazione).
+% Non puo essere vero che il conteggio dei scelto(S, R) sia diverso da 1 (cioè 0 o più di 1).
 :- #count{S, R : scelto(S, R)} != 1.
 
-% 2. DIMENSIONI E LIMITI FISICI (Senza Lama)
+
+% --------------------------------------------------------
+% 2. VINCOLI FISICI E DIMENSIONALI
+% --------------------------------------------------------
+
+% Determiniamo le dimensioni del pezzo in base alla rotazione scelta.
+% Se la rotazione è 0, le dimensioni sono quelle originali (PW, PH).
+% Se la rotazione è 1, le dimensioni sono invertite (PH, PW).
 dim_pezzo(PW, PH) :- scelto(_, 0), pezzo(_, PW, PH, _).
 dim_pezzo(PH, PW) :- scelto(_, 1), pezzo(_, PW, PH, _).
 
-% Il pezzo deve entrare fisicamente nel buco
+
+% VINCOLO DI ADATTAMENTO: Il pezzo deve entrare nello scarto libero.
+% Non può essere vero che il pezzo sia più largo dello scarto libero in larghezza.
 :- scelto(S, _), dim_pezzo(W, _), scarto_libero(S, SW, _), W > SW.
+% Non può essere vero che il pezzo sia più alto dello scarto libero in altezza.
 :- scelto(S, _), dim_pezzo(_, H), scarto_libero(S, _, SH), H > SH.
 
-% 3. OTTIMIZZAZIONE (Il Cervello BSSF)
 
-% Calcoliamo i resti (Spazio - Pezzo - Lama).
-% Se il resto teorico è negativo o zero (il pezzo entra a filo), il resto effettivo è 0.
+% --------------------------------------------------------
+% 3. FUNZIONE OBIETTIVO (STRATEGIA BEST SHORT SIDE FIT)
+% La strategia BSSF consiste nel cercare di posizionare
+% il pezzo in modo da minimizzare il lato corto rimanente dopo il taglio,
+% --------------------------------------------------------%
+
+
+
+% Calcolo dello spazio residuo lungo l'asse X dopo il taglio.
+% Resto = larghezza dello scarto libero - larghezza del pezzo - spessore della lama.
+% Se il resto è positivo, lo consideriamo come un candidato per la minimizzazione.
+% Se il resto è zero o negativo, lo consideriamo come un incastro a filo e assegniamo un valore di 0 per la minimizzazione.
 resto_x(V) :- scelto(S, _), dim_pezzo(W, _), scarto_libero(S, SW, _), lama(L), V = SW - W - L, V > 0.
 resto_x(0) :- scelto(S, _), dim_pezzo(W, _), scarto_libero(S, SW, _), lama(L), SW - W - L <= 0.
 
+% Calcolo dello spazio residuo lungo l'asse Y dopo il taglio.
+% Resto = altezza dello scarto libero - altezza del pezzo - spessore della lama.
+% Se il resto è positivo, lo consideriamo come un candidato per la minimizzazione.
+% Se il resto è zero o negativo, lo consideriamo come un incastro a filo e assegniamo un valore di 0 per la minimizzazione.
 resto_y(V) :- scelto(S, _), dim_pezzo(_, H), scarto_libero(S, _, SH), lama(L), V = SH - H - L, V > 0.
 resto_y(0) :- scelto(S, _), dim_pezzo(_, H), scarto_libero(S, _, SH), lama(L), SH - H - L <= 0.
 
-% Ordiniamo i resti per capire qual è il lato corto e quale il lungo
+% Definizione del minimo tra i resti residui per implementare la strategia BSSF.
+% Individuiamo il minimo tra i resti residui lungo X e Y, dando priorità al lato più corto.
 min_resto(RX) :- resto_x(RX), resto_y(RY), RX <= RY.
 min_resto(RY) :- resto_x(RX), resto_y(RY), RY < RX.
 
+% Definizione del massimo tra i resti residui per implementare la seconda priorità della strategia BSSF.
+% Individuiamo il massimo tra i resti residui lungo X e Y, dando priorità al lato più lungo.
 max_resto(RX) :- resto_x(RX), resto_y(RY), RX > RY.
 max_resto(RY) :- resto_x(RX), resto_y(RY), RY >= RX.
 
-% Calcolo Area Residua
-area_sprecata(Area) :-
-    scelto(S, _), dim_pezzo(W, H), scarto_libero(S, SW, SH),
-    Area = (SW * SH) - (W * H).
+% Calcolo dell'area inutilizzata dopo il posizionamento del pezzo nello scarto.
+% L'area sprecata è data dall'area dello scarto libero meno l'area del pezzo.
+area_sprecata(Area) :-  scelto(S, _), dim_pezzo(W, H), scarto_libero(S, SW, SH), Area = (SW * SH) - (W * H).
 
-% --- GERARCHIA DELLE PREFERENZE ---
+% --------------------------------------------------------
+% 4. PRIORITÀ E OTTIMIZZAZIONE
+% --------------------------------------------------------
 
-% Priorità 3 (SUPREMA): Cerca l'incastro perfetto a filo. Minimizza il lato corto rimanente.
-% Questo spinge il pezzo nell'angolo dello scarto e fa capire al solver quando è vitale usare la Rotazione.
+% Priorità 3 (MASSIMA)
+% La priorità più alta è data alla minimizzazione del lato corto residuo, cercando di ottenere un incastro a filo.
 :~ min_resto(M). [M@3, M]
 
-% Priorità 2 (ALTA): A parità di incastro a filo da un lato, compatta anche l'altro asse.
+% Priorità 2 (ALTA)
+% Se ci sono più soluzioni con lo stesso lato corto residuo, si preferisce quella con il lato lungo residuo più piccolo.
 :~ max_resto(M). [M@2, M]
 
-% Priorità 1 (BASSA): Evita di usare scarti giganti per pezzi minuscoli.
+% Priorità 1 (BASSA)
+% Se ci sono ancora più soluzioni con lo stesso lato corto e lungo residuo, si preferisce quella con l'area sprecata più piccola.
 :~ area_sprecata(A). [A@1, A]
+
+
+% ---------------------------------------------------------------------
+% OUTPUT E FILTRO DEI RISULTATI
+% ---------------------------------------------------------------------
 
 #show scelto/2.
 %#show scarto_libero/3.
