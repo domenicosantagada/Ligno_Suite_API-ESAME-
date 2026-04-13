@@ -216,8 +216,20 @@ public class OttimizzazioneService {
                     pezzo.id, pezzo.nome, pezzoW, pezzoH, pezzo.puoRuotare);
 
             // Inviamo il pezzo e lo spessore lama come input al solver ASP, usando le classi PezzoIn e LamaIn per rappresentarli.
-            inputProgram.addObjectInput(new PezzoIn(pezzo.id, pezzoW, pezzoH, pezzo.puoRuotare ? 1 : 0));
-            inputProgram.addObjectInput(new LamaIn((int) Math.ceil(spessoreLama)));
+            // Creiamo gli oggetti di input
+            PezzoIn pIn = new PezzoIn(pezzo.id, pezzoW, pezzoH, pezzo.puoRuotare ? 1 : 0);
+            LamaIn lIn = new LamaIn((int) Math.ceil(spessoreLama));
+
+            // Aggiungiamoli al programma
+            inputProgram.addObjectInput(pIn);
+            inputProgram.addObjectInput(lIn);
+
+//            // --- CODICE PER STAMPARE I PREDICATI ---
+//            logger.info("--- PREDICATI GENERATI DA EMBASP ---");
+//            // ASPMapper.getString(object) restituisce la stringa del predicato (es: pezzo("0-0",600,400,0))
+//            logger.info(ASPMapper.getInstance().getString(pIn));
+//            logger.info(ASPMapper.getInstance().getString(lIn));
+//            // ---------------------------------------
 
             int scartiValidiInviati = 0;
             double latoMinimoPezzo = Math.min(pezzoW, pezzoH);
@@ -234,7 +246,12 @@ public class OttimizzazioneService {
                     if (scarto.w >= latoMinimoPezzo && scarto.h >= latoMinimoPezzo) {
                         String idScarto = pIdx + "-" + sIdx;
 
-                        inputProgram.addObjectInput(new ScartoIn(idScarto, (int) scarto.w, (int) scarto.h));
+                        ScartoIn sIn = new ScartoIn(idScarto, (int) scarto.w, (int) scarto.h);
+
+                        inputProgram.addObjectInput(sIn);
+
+//                        // Stampa anche i predicati degli scarti
+//                        logger.info(ASPMapper.getInstance().getString(sIn));
 
                         logScarti.add(String.format("[%s: %dx%d]", idScarto, (int) scarto.w, (int) scarto.h));
                         scartiValidiInviati++;
