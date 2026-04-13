@@ -398,6 +398,7 @@ public class OttimizzazioneService {
         List<ScartoDTO> spaziLiberi = new ArrayList<>();
         List<PezzoDTO> nonPosizionabili = new ArrayList<>();
 
+        // Costruttore del pannello aperto, che inizializza le dimensioni del pannello e aggiunge uno scarto iniziale che rappresenta l'intero pannello meno i margini.
         public PannelloAperto(double w, double h, double margine) {
             this.pannelloLarghezza = w;
             this.pannelloAltezza = h;
