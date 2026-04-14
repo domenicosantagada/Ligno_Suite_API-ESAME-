@@ -9,6 +9,7 @@ public class PreventivoListDTO {
     public Long id;
     public LocalDate date;
     public Long invoiceNumber;
+    public String fromName; // Il nome del falegname che ha creato il preventivo
     public String toName; // Il nome del cliente a cui è intestato
     public Double total;
 }

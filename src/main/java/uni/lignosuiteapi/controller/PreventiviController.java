@@ -23,6 +23,10 @@ public class PreventiviController {
         this.preventivoService = preventivoService;
     }
 
+    // ==========================================
+    //       ENDPOINT LATO FALEGNAME (PROPRIETARIO)
+    // ==========================================
+
     /**
      * Endpoint GET per recuperare tutti i preventivi dell'utente loggato.
      * Chiamata: GET /api/preventivi
@@ -93,5 +97,31 @@ public class PreventiviController {
         Long utenteId = (Long) authentication.getPrincipal();
 
         return preventivoService.getNextInvoiceNumber(utenteId);
+    }
+
+    // ==========================================
+    //          ENDPOINT LATO CLIENTE (DESTINATARIO)
+    // ==========================================
+
+    /**
+     * Endpoint GET per il Cliente: recupera i preventivi a lui intestati tramite l'email nel JWT.
+     * Chiamata: GET /api/preventivi/cliente
+     */
+    @GetMapping("/cliente")
+    public List<PreventivoListDTO> getPreventiviCliente(Authentication authentication) {
+        // Estraiamo l'ID numerico dal token
+        Long clienteId = (Long) authentication.getPrincipal();
+        return preventivoService.getAllPreventiviPerCliente(clienteId);
+    }
+
+    /**
+     * Endpoint GET per il Cliente: recupera il dettaglio completo (con items) del preventivo.
+     * Chiamata: GET /api/preventivi/cliente/{id}
+     */
+    @GetMapping("/cliente/{id}")
+    public PreventivoDTO getPreventivoDettaglioCliente(@PathVariable Long id, Authentication authentication) {
+        // Estraiamo l'ID numerico dal token
+        Long clienteId = (Long) authentication.getPrincipal();
+        return preventivoService.getPreventivoByIdPerCliente(id, clienteId);
     }
 }
