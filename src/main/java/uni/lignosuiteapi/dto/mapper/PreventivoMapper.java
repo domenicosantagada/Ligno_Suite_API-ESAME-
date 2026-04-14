@@ -16,6 +16,7 @@ import uni.lignosuiteapi.model.PreventivoItem;
 @Mapper(componentModel = "spring")
 public interface PreventivoMapper {
 
+    @Mapping(source = "utente.logoBase64", target = "fromLogo")
     PreventivoDTO toDTO(Preventivo preventivo);
 
     // Diciamo a MapStruct di ignorare l'utente (lo settiamo noi nel service)
@@ -23,6 +24,7 @@ public interface PreventivoMapper {
     Preventivo toEntity(PreventivoDTO dto);
 
     // Mapper specifico e leggero per la lista riassuntiva
+    @Mapping(source = "utente.nomeAzienda", target = "fromName")
     PreventivoListDTO toListDTO(Preventivo preventivo);
 
     PreventivoItemDTO itemToDTO(PreventivoItem item);
