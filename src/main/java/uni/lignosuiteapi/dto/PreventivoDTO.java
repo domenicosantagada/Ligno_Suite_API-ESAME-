@@ -13,6 +13,8 @@ public class PreventivoDTO {
     public String fromName;
     public String fromPiva;
     public String fromEmail;
+    public String fromLogo;
+
     public String toName;
     public String toPiva;
     public String toEmail;
