@@ -166,4 +166,37 @@ public class PreventivoService {
                 .max(Long::compareTo)
                 .orElse(0L) + 1L;
     }
+
+    /**
+     * LATO CLIENTE: Recupera la lista "leggera" dei preventivi a lui intestati.
+     */
+    @Transactional(readOnly = true)
+    public List<PreventivoListDTO> getAllPreventiviPerCliente(Long clienteId) {
+        // 1. Recuperiamo il cliente dal DB per avere la certezza della sua email
+        Utente cliente = utenteRepository.findById(clienteId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente cliente non trovato"));
+
+        // 2. Usiamo la sua vera email per filtrare i preventivi
+        return preventivoRepository.findByToEmail(cliente.getEmail()).stream()
+                .map(preventivoMapper::toListDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * LATO CLIENTE: Recupera il dettaglio completo per l'anteprima.
+     * Utilizza JOIN FETCH e verifica la proprietà tramite l'email.
+     */
+    @Transactional(readOnly = true)
+    public PreventivoDTO getPreventivoByIdPerCliente(Long id, Long clienteId) {
+        // 1. Recuperiamo il cliente dal DB
+        Utente cliente = utenteRepository.findById(clienteId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente cliente non trovato"));
+
+        // 2. Usiamo la sua VERA email e il JOIN FETCH
+        return preventivoRepository.findByIdAndToEmailWithItems(id, cliente.getEmail())
+                .map(preventivoMapper::toDTO)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Preventivo non trovato o non associato a questa email"));
+    }
 }
