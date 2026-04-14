@@ -36,4 +36,9 @@ public interface PreventivoRepository extends JpaRepository<Preventivo, Long> {
     // Query personalizzata per ottenere il prossimo numero di fattura disponibile per un utente specifico.
     @Query("SELECT COALESCE(MAX(p.invoiceNumber), 0) + 1 FROM Preventivo p WHERE p.utente.id = :utenteId")
     Long getNextInvoiceNumber(@Param("utenteId") Long utenteId);
+
+    // --- PER IL CLIENTE: DETTAGLIO E SICUREZZA ---
+    // Carica gli articoli e verifica che il preventivo sia destinato a questa email
+    @Query("SELECT p FROM Preventivo p LEFT JOIN FETCH p.items WHERE p.id = :preventivoId AND p.toEmail = :email")
+    Optional<Preventivo> findByIdAndToEmailWithItems(@Param("preventivoId") Long preventivoId, @Param("email") String email);
 }
