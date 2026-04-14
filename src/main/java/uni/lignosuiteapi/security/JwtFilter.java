@@ -12,12 +12,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+/**
+ * Component che serve a intercettare ogni richiesta HTTP, controllare se c'è un token JWT
+ * valido nell'header "Authorization" e, se sì, autorizzare l'utente per quella singola richiesta.
+ */
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
+    // CONSTRUCTOR INJECTION
     public JwtFilter(JwtUtil jwtUtil) {
+
         this.jwtUtil = jwtUtil;
     }
 

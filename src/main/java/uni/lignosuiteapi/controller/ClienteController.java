@@ -2,7 +2,7 @@ package uni.lignosuiteapi.controller;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import uni.lignosuiteapi.model.Cliente;
+import uni.lignosuiteapi.dto.ClienteDTO;
 import uni.lignosuiteapi.service.ClienteService;
 
 import java.util.List;
@@ -16,67 +16,67 @@ public class ClienteController {
 
     private final ClienteService clienteService;
 
-    // CONSTRUCTOR INJECTION: Sostituisce @Autowired
+    // CONSTRUCTOR INJECTION
     public ClienteController(ClienteService clienteService) {
+
         this.clienteService = clienteService;
     }
 
     /**
-     * =========================
-     * OTTENERE TUTTI I CLIENTI DI UN UTENTE
-     * =========================
+     * Endpoint GET per recuperare tutti i clienti dell'utente loggato.
+     * Chiamata: GET /api/clienti
      */
     @GetMapping
-    public List<Cliente> getAllClienti(Authentication authentication) {
-        // Estraiamo l'ID utente in modo sicuro dal Token JWT
+    public List<ClienteDTO> getAllClienti(Authentication authentication) {
+
         Long utenteId = (Long) authentication.getPrincipal();
+
         return clienteService.getAllClienti(utenteId);
     }
 
     /**
-     * =========================
-     * CREARE UN NUOVO CLIENTE
-     * =========================
+     * Endpoint POST per creare un nuovo cliente. Il cliente sarà associato all'utente loggato.
+     * Chiamata: POST /api/clienti
      */
     @PostMapping
-    public Cliente createCliente(Authentication authentication, @RequestBody Cliente cliente) {
+    public ClienteDTO createCliente(Authentication authentication, @RequestBody ClienteDTO clienteDTO) {
+
         Long utenteId = (Long) authentication.getPrincipal();
-        return clienteService.createCliente(utenteId, cliente);
+
+        return clienteService.createCliente(utenteId, clienteDTO);
     }
 
     /**
-     * =========================
-     * AGGIORNARE UN CLIENTE
-     * =========================
+     * Endpoint PUT per aggiornare un cliente esistente. L'utente può aggiornare solo I SUOI clienti.
+     * Chiamata: PUT /api/clienti/{id}
      */
     @PutMapping("/{id}")
-    public Cliente updateCliente(@PathVariable Long id, Authentication authentication, @RequestBody Cliente cliente) {
+    public ClienteDTO updateCliente(@PathVariable Long id, Authentication authentication, @RequestBody ClienteDTO clienteDTO) {
+
         Long utenteId = (Long) authentication.getPrincipal();
-        return clienteService.updateCliente(id, cliente, utenteId);
+
+        return clienteService.updateCliente(id, clienteDTO, utenteId);
     }
 
     /**
-     * =========================
-     * ELIMINARE UN CLIENTE
-     * =========================
+     * Endpoint DELETE per eliminare un cliente esistente. L'utente può eliminare solo I SUOI clienti.
+     * Chiamata: DELETE /api/clienti/{id}
      */
     @DeleteMapping("/{id}")
     public void deleteCliente(@PathVariable Long id, Authentication authentication) {
+
         Long utenteId = (Long) authentication.getPrincipal();
+
         clienteService.deleteCliente(id, utenteId);
     }
 
     /**
-     * ===============================
-     * OTTENERE TUTTI I CLIENTI DEL DATABASE (PERICOLO!)
-     * ===============================
-     * Questo endpoint restituiva i clienti di TUTTI.
-     * In un sistema multi-utente è un gravissimo Data Leak.
-     * Commentato per sicurezza.
+     * Endpoint GET per recuperare TUTTI i clienti di TUTTI gli utenti.
+     * Utilizzato solo in fase di test e chiamate con Postman
      */
     /*
     @GetMapping("/all")
-    private List<Cliente> getAllClientiDb() {
+    private List<ClienteDTO> getAllClientiDb() {
         return clienteService.getAllClientiDb();
     }
     */

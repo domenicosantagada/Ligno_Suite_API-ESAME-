@@ -21,30 +21,36 @@ public class AuthController {
 
     // CONSTRUCTOR INJECTION
     public AuthController(UtenteService utenteService, JwtUtil jwtUtil) {
+
         this.utenteService = utenteService;
+
         this.jwtUtil = jwtUtil;
     }
 
     /**
-     * REGISTRAZIONE: Pubblico.
+     * Endpoint POST pubblico per la registrazione di un nuovo utente.
+     * Chiamata: POST /api/auth/register
      */
     @PostMapping("/register")
     public Utente register(@RequestBody Utente utente) {
+
         return utenteService.registerUser(utente);
     }
 
     /**
-     * LOGIN: Pubblico. Restituisce l'utente e il TOKEN JWT!
+     * Endpoint POST pubblico per il login di un utente.
+     * Chiamata: POST /api/auth/login
      */
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody Utente credenziali) {
-        // 1. Esegue il normale login tramite il service (lancia eccezione se credenziali errate)
+
+        // 1. Verifica le credenziali e ottieni i dati dell'utente loggato
         Utente utenteLoggato = utenteService.loginUser(credenziali);
 
-        // 2. Genera il Token JWT crittografato basato sull'ID dell'utente
+        // 2. Genera un token JWT usando l'ID dell'utente come payload
         String token = jwtUtil.generateToken(utenteLoggato.getId());
 
-        // 3. Impacchettiamo sia i dati dell'utente che il token per il frontend
+        // 3. Ritorna il token e i dati dell'utente in una mappa
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
         response.put("utente", utenteLoggato);
@@ -53,18 +59,20 @@ public class AuthController {
     }
 
     /**
-     * AGGIORNA PROFILO: Protetto.
-     * N.B: Rimosso {id} dall'URL, usiamo "/update" e prendiamo l'ID dal token in sicurezza.
+     * Endpoint PUT per aggiornare il profilo dell'utente loggato.
+     * Chiamata: /api/auth/update
      */
     @PutMapping("/update")
     public Utente updateProfilo(Authentication authentication, @RequestBody Utente datiAggiornati) {
+
         Long utenteId = (Long) authentication.getPrincipal();
+
         return utenteService.updateUser(utenteId, datiAggiornati);
     }
 
     /**
-     * OTTIENI PROFILO: Protetto.
-     * N.B: Rimosso {id} dall'URL. Lo standard REST è chiamarlo "/me".
+     * Endpoint GET per recuperare i dati dell'utente loggato.
+     * Chiamata: GET /api/auth/me
      */
     @GetMapping("/me")
     public Utente getUtente(Authentication authentication) {

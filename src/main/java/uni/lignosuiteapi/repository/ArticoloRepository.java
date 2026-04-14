@@ -7,7 +7,7 @@ import uni.lignosuiteapi.model.Articolo;
 import java.util.List;
 
 /**
- * Repository JPA per l'entità Articolo
+ * Repository JPA per l'entità Articolo.
  */
 @Repository
 public interface ArticoloRepository extends JpaRepository<Articolo, Long> {
