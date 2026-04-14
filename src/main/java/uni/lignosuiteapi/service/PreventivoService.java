@@ -2,6 +2,7 @@ package uni.lignosuiteapi.service;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import uni.lignosuiteapi.dto.PreventivoDTO;
 import uni.lignosuiteapi.dto.PreventivoItemDTO;
@@ -38,6 +39,7 @@ public class PreventivoService {
     /**
      * Metodo che ritorna la lista dei preventivi di un utente specifico, identificato dal suo ID.
      */
+    @Transactional(readOnly = true)
     public List<PreventivoListDTO> getAllPreventivi(Long utenteId) {
         return preventivoRepository.findByUtenteId(utenteId).stream()
                 .map(preventivoMapper::toListDTO)
@@ -47,24 +49,20 @@ public class PreventivoService {
     /**
      * Metodo che ritorna un preventivo specifico, identificato dal suo ID, solo se appartiene all'utente specificato (IDOR).
      */
+    @Transactional(readOnly = true)
     public PreventivoDTO getPreventivoById(Long id, Long utenteId) {
-
-        // 1. Recupera il preventivo dal database, o lancia un 404 se non esiste
-        Preventivo preventivo = preventivoRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Preventivo non trovato"));
-
-        // 2. Controlla che il preventivo appartenga all'utente che sta facendo la richiesta (IDOR), altrimenti lancia un 403
-        if (!preventivo.getUtente().getId().equals(utenteId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accesso negato.");
-        }
-
-        // 3. Traduce il preventivo in DTO e lo ritorna
-        return preventivoMapper.toDTO(preventivo);
+        // La query nel repository ora fa tutto: trova, carica gli items e verifica il proprietario
+        return preventivoRepository.findByIdAndUtenteIdWithItems(id, utenteId)
+                .map(preventivoMapper::toDTO)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Preventivo non trovato o non autorizzato"));
     }
 
     /**
      * Metodo che crea un nuovo preventivo associato a un utente specifico, identificato dal suo ID.
      */
+    @Transactional
     public PreventivoDTO createPreventivo(Long utenteId, PreventivoDTO preventivoDTO) {
 
         // 1. Verifichiamo che l'utente esista (altrimenti non possiamo associare il preventivo a nessuno)
@@ -91,6 +89,7 @@ public class PreventivoService {
     /**
      * Metodo che aggiorna un preventivo esistente, identificato dal suo ID, con i nuovi dettagli forniti nel DTO.
      */
+    @Transactional
     public PreventivoDTO updatePreventivo(Long id, PreventivoDTO datiAggiornati, Long utenteId) {
 
         // 1. Verifichiamo che il preventivo esista (altrimenti non possiamo aggiornarlo)
@@ -138,6 +137,7 @@ public class PreventivoService {
     /**
      * Metodo che elimina un preventivo esistente, identificato dal suo ID.
      */
+    @Transactional
     public void deletePreventivo(Long id, Long utenteId) {
 
         // 1. Verifichiamo che il preventivo esista (altrimenti non possiamo eliminarlo)
@@ -156,6 +156,7 @@ public class PreventivoService {
     /**
      * Metodo che calcola il prossimo numero fattura disponibile per un utente, basandosi sui preventivi esistenti.
      */
+    @Transactional(readOnly = true)
     public Long getNextInvoiceNumber(Long utenteId) {
 
         // Recupera tutti i preventivi dell'utente, estrae i numeri fattura non nulli, trova il massimo e ritorna il successivo (max + 1). Se non ci sono numeri fattura, ritorna 1.
